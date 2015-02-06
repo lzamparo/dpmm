@@ -10,6 +10,22 @@ from kale.math_utils import log_sample, log_sum_exp, vi
 def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactive_topics, N_TV, N_T, D_T, num_inner_itns):
     """
     Performs a single iteration of Metropolis-Hastings (split-merge).
+    
+    From the Jain & Neal paper notation:
+    V:       Vocabulary, which is a bit weird 
+    D:       data matrix
+    N_DV:
+    N_D:
+    alpha:   concentration param for DP prior
+    beta:    who knows?
+    z_D:     indicators for each data point
+    inv_z_T: who knows?
+    active_topics: active mixture components
+    inactive_topics: ...
+    N_TV:    who knows?
+    N_T:     who knows?
+    D_T:     who knows?
+    num_inner_itns: number of restricted Gibbs steps to take per M-H step.
     """
 
     N_s_V = empty(V, dtype=int)
@@ -17,7 +33,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
 
     log_dist = empty(2)
 
-    d, e = choice(D, 2, replace=False) # choose 2 documents
+    d, e = choice(D, 2, replace=False) # choose 2 data points
 
     if z_D[d] == z_D[e]:
         s = inactive_topics.pop()
@@ -41,7 +57,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
     else:
         idx = (inv_z_T[s] | inv_z_T[t]) - set([d, e])
 
-    for f in idx:
+    for f in idx:                   # partition the points in S
         if uniform() < 0.5:
             inv_z_s.add(f)
             N_s_V += N_DV[f, :]
