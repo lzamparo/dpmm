@@ -4,8 +4,9 @@ from numpy.random import seed
 
 from generative_process import generate_data
 
+import time
 
-def test_inference(algorithm, V, D, l, alpha, beta, num_itns, s):
+def test_inference(algorithm, V, D, l, alpha, beta, num_itns, s, args):
     """
     Generates data via the generative process and then infers the
     parameters of the generative process using that data.
@@ -26,9 +27,11 @@ def test_inference(algorithm, V, D, l, alpha, beta, num_itns, s):
     print 'Running inference...'
 
     # initialize every document to the same topic
-
+    start = time.clock()
     algorithm.inference(N_DV, alpha, beta, zeros(D, dtype=int), num_itns, z_D)
-
+    end = time.clock()
+    elapsed = end - start
+    print "Time for algorithm " + args.algorithm + ":" + str(elapsed)
 
 def main():
 
@@ -76,7 +79,8 @@ def main():
                    args.alpha,
                    args.beta,
                    args.num_itns,
-                   args.seed)
+                   args.seed,
+				   args)
 
 
 if __name__ == '__main__':
