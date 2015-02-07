@@ -33,7 +33,8 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
 
     log_dist = empty(2)
 
-    d, e = choice(D, 2, replace=False) # choose 2 data points
+    # (1) choose 2 data points
+    d, e = choice(D, 2, replace=False) 
 
     if z_D[d] == z_D[e]:
         s = inactive_topics.pop()
@@ -41,23 +42,27 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
     else:
         s = z_D[d]
 
+    # (2) grab all points in the component for d
     inv_z_s = set([d])
     N_s_V[:] = N_DV[d, :]
     N_s = N_D[d]
     D_s = 1
 
+    # (2) grab all points in the component for e
     t = z_D[e]
     inv_z_t = set([e])
     N_t_V[:] = N_DV[e, :]
     N_t = N_D[e]
     D_t = 1
 
+    # (2) form the union of the set of points d,e, but withhold the points themselves
     if z_D[d] == z_D[e]:
         idx = inv_z_T[t] - set([d, e])
     else:
         idx = (inv_z_T[s] | inv_z_T[t]) - set([d, e])
-
-    for f in idx:                   # partition the points in S
+    
+    # (3) define the launch state: partition the points uniformly at random
+    for f in idx:                   
         if uniform() < 0.5:
             inv_z_s.add(f)
             N_s_V += N_DV[f, :]
@@ -71,6 +76,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
 
     acc = 0.0
 
+    # (3) define the launch state: perform num_inner_itns restricted Gibbs sampling scans
     for inner_itn in xrange(num_inner_itns):
         for f in idx:
 
@@ -122,6 +128,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
             if inner_itn == num_inner_itns - 1:
                 acc += log_dist[u]
 
+    # (4) propose a split: c^{split} initialized from c^{launch}
     if z_D[d] == z_D[e]:
 
         acc *= -1.0
@@ -149,7 +156,8 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
         else:
             active_topics.remove(s)
             inactive_topics.add(s)
-
+    
+    # (5) propose a merge: c^{merge} initialized from c^{launch}
     else:
 
         for f in inv_z_T[s]:
@@ -187,11 +195,11 @@ def inference(N_DV, alpha, beta, z_D, num_itns, true_z_D=None):
     Conjugate split-merge.
     """
 
-    D, V = N_DV.shape
+    D, V = N_DV.shape  # data: D data points over V dimensions
 
     T = D # maximum number of topics
 
-    N_D = N_DV.sum(1) # document lengths
+    N_D = N_DV.sum(1) # document lengths / 
 
     inv_z_T = defaultdict(set)
     for d in xrange(D):
