@@ -12,19 +12,19 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
     Performs a single iteration of Metropolis-Hastings (split-merge).
     
     From the Jain & Neal paper notation:
-    V:       Vocabulary, which is a bit weird 
-    D:       data matrix
-    N_DV:
-    N_D:
+    V:       number of features (N_DV.shape[1])
+    D:       number of data points (N_DV.shape[0])
+    N_DV:    the data
+    N_D:     sum along data features (N_DV.sum(1))
     alpha:   concentration param for DP prior
-    beta:    who knows?
+    beta:    prior on ?
     z_D:     indicators for each data point
-    inv_z_T: who knows?
+    inv_z_T: indicates which data points are associated with which components
     active_topics: active mixture components
     inactive_topics: ...
-    N_TV:    who knows?
-    N_T:     who knows?
-    D_T:     who knows?
+    N_TV:    sum of the elements assigned to component T
+    N_T:     number of elements assigned to component T
+    D_T:     bincount(z_D, minlength=T) | counts how many times each component appears in z_D
     num_inner_itns: number of restricted Gibbs steps to take per M-H step.
     """
 
@@ -199,17 +199,17 @@ def inference(N_DV, alpha, beta, z_D, num_itns, true_z_D=None):
 
     T = D # maximum number of topics
 
-    N_D = N_DV.sum(1) # document lengths / 
+    N_D = N_DV.sum(1) # document lengths / sum along features
 
     inv_z_T = defaultdict(set)
     for d in xrange(D):
-        inv_z_T[z_D[d]].add(d) # inverse mapping from topics to documents
+        inv_z_T[z_D[d]].add(d) # inverse mapping from topics to documents / clusters to data points
 
     active_topics = set(unique(z_D))
     inactive_topics = set(xrange(T)) - active_topics
 
-    N_TV = zeros((T, V), dtype=int)
-    N_T = zeros(T, dtype=int)
+    N_TV = zeros((T, V), dtype=int)     # sum of the elements assigned to component T
+    N_T = zeros(T, dtype=int)           # number of points assigned to component T
 
     for d in xrange(D):
         N_TV[z_D[d], :] += N_DV[d, :]
