@@ -43,20 +43,40 @@ class DPMM:
         return np.array([g.covar for g in self.params.itervalues()])
 
 
-    def __init__(self, n_components=-1, alpha=1.0):
+    def __init__(self, n_components=-1, alpha=1.0, do_sample_alpha=False, a=0.5, b=5.0):
         self.params = {0: Gaussian()}
         self.n_components = n_components
         self.means_ = self._get_means()
         self.alpha = alpha
+        if do_sample_alpha:
+            self.alpha_hyperparams = (a,b)
+            self.alpha_samples = []
+        
+    def sample_alpha(self):
+        """ Sample a new value for α based on the formulation in 
+        West (http://web.cse.ohio-state.edu/~kulis/teaching/788_sp12/DP.learnalpha.pdf):
+        1) sample x from (nu | alpha, k) ~ Beta(alpha + 1, n) 
+        2) sample a new alpha from (α|x, k) ∼ π_x G(a + k, b − log(x)) + (1 − π_x)G(a + k − 1, b − log(x))
+        where π_x = \frac{a + k-1}{a + k-1 + n(b - log(x))}
+        """
+        
+        n = self.n_points
+        k = self.n_components
+        a,b = self.alpha_hyperparams
+        x = np.random.beta(self.alpha + 1, n)
+        pi_x = (a + k - 1.0) / (a + k - 1.0 + n * (b - np.log(x)))
+        return pi_x*(np.random.gamma(a + k, b - np.log(x))) + (1 - pi_x)*(np.random.gamma(a + k - 1.0, b - np.log(x)))
 
 
-    def fit_collapsed_Gibbs(self, X):
+    def fit_collapsed_Gibbs(self, X, do_sample_alpha=False):
         """ according to algorithm 3 of collapsed Gibbs sampling in Neal 2000:
         http://www.stat.purdue.edu/~rdutta/24.PDF """
+        
         mean_data = np.matrix(X.mean(axis=0))
         self.n_points = X.shape[0]
         self.n_var = X.shape[1]
         self._X = X
+        
         if self.n_components == -1:
             # initialize with 1 cluster for each datapoint
             self.params = dict([(i, Gaussian(X=np.matrix(X[i]), mu_0=mean_data)) for i in xrange(X.shape[0])])
@@ -78,64 +98,73 @@ class DPMM:
 
         n_iter = 0 # with max_iter hard limit, in case of cluster oscillations
         # while the clusters did not converge (i.e. the number of components or
-        # the means of the components changed) and we still have iter credit
+        # the means of the components changed) and we still have iter credit 
+        
         while (n_iter < max_iter 
                 and (previous_components != self.n_components
                 or abs((previous_means - self._get_means()).sum()) > epsilon)):
-            n_iter += 1
             previous_means = self._get_means()
-            previous_components = self.n_components
-
-            for i in xrange(X.shape[0]):
-                # remove X[i]'s sufficient statistics from z[i]
-                self.params[self.z[i]].rm_point(X[i])
-                # if it empties the cluster, remove it and decrease K
-                if self.params[self.z[i]].n_points <= 0:
-                    self.params.pop(self.z[i])
-                    self.n_components -= 1
-
-                tmp = []
-                for k, param in self.params.iteritems():
-                    # compute P_k(X[i]) = P(X[i] | X[-i] = k)
-                    marginal_likelihood_Xi = param.pdf(X[i])
-                    # set N_{k,-i} = dim({X[-i] = k})
-                    # compute P(z[i] = k | z[-i], Data) = N_{k,-i}/(α+N-1)
-                    mixing_Xi = param.n_points / (self.alpha + self.n_points - 1)
-                    tmp.append(marginal_likelihood_Xi * mixing_Xi)
-                    
-                # compute P*(X[i]) = P(X[i]|λ)
-                base_distrib = Gaussian(X=np.zeros((0, X.shape[1])))
-                prior_predictive = base_distrib.pdf(X[i])
-                # compute P(z[i] = * | z[-i], Data) = α/(α+N-1)
-                prob_new_cluster = self.alpha / (self.alpha + self.n_points - 1)
-                tmp.append(prior_predictive * prob_new_cluster)
-
-                # normalize P(z[i]) (tmp above)
-                tmp = np.array(tmp)
-                tmp /= tmp.sum()
-
-                # sample z[i] ~ P(z[i])
-                rdm = np.random.rand()
-                total = tmp[0]
-                k = 0
-                while (rdm > total):
-                    k += 1
-                    total += tmp[k]
-                # add X[i]'s sufficient statistics to cluster z[i]
-                new_key = max(self.params.keys()) + 1
-                if k == self.n_components: # create a new cluster
-                    self.z[i] = new_key
-                    self.n_components += 1
-                    self.params[new_key] = Gaussian(X=np.matrix(X[i]))
-                else:
-                    self.z[i] = self.params.keys()[k]
-                    self.params[self.params.keys()[k]].add_point(X[i])
-                assert(k < self.n_components)
-
+            previous_components = self.n_components            
+            self.gibbs_iteration(X)
+            n_iter += 1
             print "still sampling, %i clusters currently, with log-likelihood %f" % (self.n_components, self.log_likelihood())
 
         self.means_ = self._get_means() 
 
+    def gibbs_iteration(self, X, do_sample_alpha=False):
+        """ Perform one full iteration of gibbs sampling """
+        
+        # TODODODODO: RANDOMIZE THE ORDER OF SAMPLING THE POINTS!!!
+        for i in xrange(X.shape[0]):
+            # remove X[i]'s sufficient statistics from z[i]
+            self.params[self.z[i]].rm_point(X[i])
+            # if it empties the cluster, remove it and decrease K
+            if self.params[self.z[i]].n_points <= 0:
+                self.params.pop(self.z[i])
+                self.n_components -= 1
+
+            tmp = []
+            for k, param in self.params.iteritems():
+                # compute P_k(X[i]) = P(X[i] | X[-i] = k)
+                marginal_likelihood_Xi = param.pdf(X[i])
+                # set N_{k,-i} = dim({X[-i] = k})
+                # compute P(z[i] = k | z[-i], Data) = N_{k,-i}/(α+N-1)
+                mixing_Xi = param.n_points / (self.alpha + self.n_points - 1)
+                tmp.append(marginal_likelihood_Xi * mixing_Xi)
+                
+            # compute P*(X[i]) = P(X[i]|λ)
+            base_distrib = Gaussian(X=np.zeros((0, X.shape[1])))
+            prior_predictive = base_distrib.pdf(X[i])
+            # compute P(z[i] = * | z[-i], Data) = α/(α+N-1)
+            prob_new_cluster = self.alpha / (self.alpha + self.n_points - 1)
+            tmp.append(prior_predictive * prob_new_cluster)
+
+            # normalize P(z[i]) (tmp above)
+            tmp = np.array(tmp)
+            tmp /= tmp.sum()
+
+            # sample z[i] ~ P(z[i])
+            rdm = np.random.rand()
+            total = tmp[0]
+            k = 0
+            while (rdm > total):
+                k += 1
+                total += tmp[k]
+            # add X[i]'s sufficient statistics to cluster z[i]
+            new_key = max(self.params.keys()) + 1
+            if k == self.n_components: # create a new cluster
+                self.z[i] = new_key
+                self.n_components += 1
+                self.params[new_key] = Gaussian(X=np.matrix(X[i]))
+            else:
+                self.z[i] = self.params.keys()[k]
+                self.params[self.params.keys()[k]].add_point(X[i])
+            assert(k < self.n_components)
+       
+       if do_sample_alpha: 
+           new_alpha = self.sample_alpha()
+           self.alpha_samples.append[alpha]
+           self.alpha = new_alpha
 
     def predict(self, X):
         """ produces and returns the clustering of the X data """
