@@ -7,6 +7,7 @@ import pylab as pl
 import matplotlib as mpl
 import math
 
+from sklearn.cluster import MiniBatchKMeans
 from Gaussian import Gaussian
 
 epsilon = 10e-8
@@ -43,13 +44,13 @@ class DPMM:
         return np.array([g.covar for g in self.params.itervalues()])
 
 
-    def __init__(self, n_components=-1, alpha=1.0, do_sample_alpha=False, a=0.5, b=5.0):
+    def __init__(self, n_components=-1, alpha=1.0, do_sample_alpha=False, a=0.05, b=0.25):
         self.params = {0: Gaussian()}
         self.n_components = n_components
         self.means_ = self._get_means()
         self.alpha = alpha
         if do_sample_alpha:
-            self.alpha_hyperparams = (a,b)
+            self.alpha_hyperpriors = (a,b)
             self.alpha_samples = []
         
     def sample_alpha(self):
@@ -62,15 +63,55 @@ class DPMM:
         
         n = self.n_points
         k = self.n_components
-        a,b = self.alpha_hyperparams
+        a,b = self.alpha_hyperpriors
         x = np.random.beta(self.alpha + 1, n)
         pi_x = (a + k - 1.0) / (a + k - 1.0 + n * (b - np.log(x)))
         return pi_x*(np.random.gamma(a + k, b - np.log(x))) + (1 - pi_x)*(np.random.gamma(a + k - 1.0, b - np.log(x)))
 
+    def fit_conjugate_split_merge(self,X, do_sample_alpha=False):
+        """ according to algorithm of Jain & Neal 2004 """        
+        pass
+    
+    def split_merge_iteration(self,X):
+        """ This is the cycling randomized split & merge according to algorithm of Jain & Neal 2004 """
+        # (1) choose 2 data points d,e
+        # (2) grab all points in the component for d
+        # (2) grab all points in the component for e
+        # (2) form the union of the set of points d,e, but withhold the points themselves
+        # (3) define the launch state: partition the points uniformly at random
+        # (3) define the launch state: perform num_inner_itns restricted Gibbs sampling scans
+        # (4) if z[d] == z[e] propose a split: c^{split} initialized from c^{launch}
+        #       adopt the split if move is accepted
+        # (5) if z[d] != z[e] propose a merge: c^{merge} initialized from c^{launch}
+        #       adopt the merge if move is accepted 
+        
+        pass
 
-    def fit_collapsed_Gibbs(self, X, do_sample_alpha=False):
+    def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False):
         """ according to algorithm 3 of collapsed Gibbs sampling in Neal 2000:
         http://www.stat.purdue.edu/~rdutta/24.PDF """
+        
+        previous_means, previous_components = self.initialize_model(X,do_kmeans)
+
+        n_iter = 0 # with max_iter hard limit, in case of cluster oscillations
+        # while the clusters did not converge (i.e. the number of components or
+        # the means of the components changed) and we still have iter credit 
+        while (n_iter < max_iter 
+                and (previous_components != self.n_components
+                or abs((previous_means - self._get_means()).sum()) > epsilon)):
+            previous_means = self._get_means()
+            previous_components = self.n_components            
+            self.gibbs_iteration(X, do_sample_alpha)
+            n_iter += 1
+            print "still sampling, %i clusters currently, with log-likelihood %f, alpha %f" % (self.n_components, self.log_likelihood(), self.alpha)
+
+        self.means_ = self._get_means() 
+
+    def initialize_model(self, X, do_kmeans=False):
+        """ Initialize each component of the model in an appropriate way.  This is done one of three ways:
+        - one component per point.  
+        - randomly assigned labels for self.n_components > 0 components
+        - from a short k-means run with k = round(alpha * log(X.shape[0])) """
         
         mean_data = np.matrix(X.mean(axis=0))
         self.n_points = X.shape[0]
@@ -82,40 +123,45 @@ class DPMM:
             self.params = dict([(i, Gaussian(X=np.matrix(X[i]), mu_0=mean_data)) for i in xrange(X.shape[0])])
             self.z = dict([(i,i) for i in range(X.shape[0])])
             self.n_components = X.shape[0]
-            previous_means = 2 * self._get_means()
+            previous_means = (1.0 + 5*epsilon) * self._get_means()
             previous_components = self.n_components
-        else:
-            # init randomly (or with k-means)
-            self.params = dict([(j, Gaussian(X=np.zeros((0, X.shape[1])), mu_0=mean_data)) for j in xrange(self.n_components)])
-            self.z = dict([(i, random.randint(0, self.n_components - 1)) 
-                      for i in range(X.shape[0])])
-            previous_means = 2 * self._get_means()
+        elif self.n_components != -1 and do_kmeans:
+            # init with k-means
+            #File "Dpmm.py", line 123, in initialize_model
+                #self.params = dict([(j, Gaussian(X=np.zeros((0, X.shape[1])), mu_0=m)) for j,m in enumerate(means_from_kmeans)])
+            #File "/home/lee/projects/dpmm/dpmm/Gaussian.py", line 31, in __init__
+                #assert(self._mu_0.shape == (1, self.n_var))            
+            batch_size = (np.floor(X.shape[0] / 10.0)).astype(int)
+            mbk = MiniBatchKMeans(init='k-means++', n_clusters=self.n_components, batch_size=batch_size,
+                                  n_init=10, max_no_improvement=10, verbose=0)
+            mbk.fit(X)
+            labels_from_kmeans = mbk.labels_  
+            means_from_kmeans = mbk.cluster_centers_ 
+            self.params = dict([(j, Gaussian(X=np.zeros((0, X.shape[1])), mu_0=m.reshape(mean_data.shape))) for j,m in enumerate(means_from_kmeans)])
+            self.z = dict([(i, l) for i,l in enumerate(labels_from_kmeans)])
+            previous_means = (1.0 + 5*epsilon) * self._get_means()
             previous_components = self.n_components
             for i in xrange(X.shape[0]):
                 self.params[self.z[i]].add_point(X[i])
+        else:
+            # init randomly among self.n_component component labels
+            self.params = dict([(j, Gaussian(X=np.zeros((0, X.shape[1])), mu_0=mean_data)) for j in xrange(self.n_components)])
+            self.z = dict([(i, random.randint(0, self.n_components - 1)) 
+                      for i in range(X.shape[0])])
+            previous_means = (1.0 + 5*epsilon) * self._get_means()
+            previous_components = self.n_components
+            for i in xrange(X.shape[0]):
+                self.params[self.z[i]].add_point(X[i])                
 
         print "Initialized collapsed Gibbs sampling with %i clusters" % (self.n_components)
-
-        n_iter = 0 # with max_iter hard limit, in case of cluster oscillations
-        # while the clusters did not converge (i.e. the number of components or
-        # the means of the components changed) and we still have iter credit 
-        
-        while (n_iter < max_iter 
-                and (previous_components != self.n_components
-                or abs((previous_means - self._get_means()).sum()) > epsilon)):
-            previous_means = self._get_means()
-            previous_components = self.n_components            
-            self.gibbs_iteration(X)
-            n_iter += 1
-            print "still sampling, %i clusters currently, with log-likelihood %f" % (self.n_components, self.log_likelihood())
-
-        self.means_ = self._get_means() 
+        return previous_means, previous_components
 
     def gibbs_iteration(self, X, do_sample_alpha=False):
         """ Perform one full iteration of gibbs sampling """
         
-        # TODODODODO: RANDOMIZE THE ORDER OF SAMPLING THE POINTS!!!
-        for i in xrange(X.shape[0]):
+        # randomize the order of points for the scan
+        indices = [i for i in xrange(X.shape[0])]
+        for i in np.random.permutation(indices):
             # remove X[i]'s sufficient statistics from z[i]
             self.params[self.z[i]].rm_point(X[i])
             # if it empties the cluster, remove it and decrease K
@@ -161,10 +207,10 @@ class DPMM:
                 self.params[self.params.keys()[k]].add_point(X[i])
             assert(k < self.n_components)
        
-       if do_sample_alpha: 
-           new_alpha = self.sample_alpha()
-           self.alpha_samples.append[alpha]
-           self.alpha = new_alpha
+        if do_sample_alpha:
+            new_alpha = self.sample_alpha()
+            self.alpha_samples.append(self.alpha)
+            self.alpha = new_alpha
 
     def predict(self, X):
         """ produces and returns the clustering of the X data """
@@ -292,16 +338,16 @@ if __name__ == "__main__":
     np.random.seed(0)
 
     # 4, 2-dimensional Gaussians
-    #C = np.array([[0., -0.1], [1.7, .4]])
-    #X = np.r_[np.dot(np.random.randn(n_samples/4., 2), C),
-              #.7 * np.random.randn(n_samples/8., 2) + np.array([-6, 3]),
-              #1.1 * np.random.randn(n_samples/8., 2) + np.array([3,-3]),
-              #1.2 * np.random.randn(n_samples/2., 2) - np.array([2,-6])]
+    C = np.array([[0., -0.1], [1.7, .4]])
+    X = np.r_[np.dot(np.random.randn(n_samples/4., 2), C),
+              .7 * np.random.randn(n_samples/8., 2) + np.array([-6, 3]),
+              1.1 * np.random.randn(n_samples/8., 2) + np.array([3,-3]),
+              1.2 * np.random.randn(n_samples/2., 2) - np.array([2,-6])]
 
     # 2, 2-dimensional Gaussians
-    C = np.array([[0., -0.1], [1.7, .4]])
-    X = np.r_[np.dot(np.random.randn(n_samples, 2), C),
-              .7 * np.random.randn(n_samples, 2) + np.array([-6, 3])]
+    #C = np.array([[0., -0.1], [1.7, .4]])
+    #X = np.r_[np.dot(np.random.randn(n_samples, 2), C),
+              #.7 * np.random.randn(n_samples, 2) + np.array([-6, 3])]
 
     # 2, 10-dimensional Gaussians
     #C = np.eye(10)
@@ -336,8 +382,10 @@ if __name__ == "__main__":
     else:
         # n_components is the number of initial clusters (at random, TODO k-means init)
         # -1 means that we initialize with 1 cluster per point
-        dpmm = DPMM(n_components=-1) # -1, 1, 2, 5
-        dpmm.fit_collapsed_Gibbs(X)
+        pre_alpha = 0.5
+        n_components = pre_alpha * np.log(X.shape[0])
+        dpmm = DPMM(n_components=n_components.astype(int),alpha=pre_alpha,do_sample_alpha=True) # -1, 1, 2, 5
+        dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True)
 
     color_iter = itertools.cycle(['r', 'g', 'b', 'c', 'm'])
 
