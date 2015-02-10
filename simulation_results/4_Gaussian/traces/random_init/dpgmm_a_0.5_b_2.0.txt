@@ -1,0 +1,178 @@
+# alpha = 0.5, initialized with (alpha * np.log(3200)).astype(int)
+Initialized collapsed Gibbs sampling with 3 clusters
+still sampling, 3 clusters currently, with log-likelihood -3878.730732, alpha 25.023941
+still sampling, 10 clusters currently, with log-likelihood -3645.701577, alpha 61.001410
+still sampling, 18 clusters currently, with log-likelihood -3452.253831, alpha 89.673210
+still sampling, 19 clusters currently, with log-likelihood -3220.255869, alpha 79.132776
+still sampling, 21 clusters currently, with log-likelihood -3096.610491, alpha 53.045687
+still sampling, 17 clusters currently, with log-likelihood -2891.257227, alpha 99.057688
+still sampling, 29 clusters currently, with log-likelihood -2620.750109, alpha 130.845523
+still sampling, 33 clusters currently, with log-likelihood -2419.759655, alpha 127.501620
+still sampling, 19 clusters currently, with log-likelihood -2326.247896, alpha 54.337895
+still sampling, 17 clusters currently, with log-likelihood -2256.006693, alpha 91.590275
+still sampling, 22 clusters currently, with log-likelihood -2232.828297, alpha 103.101266
+still sampling, 24 clusters currently, with log-likelihood -2200.072142, alpha 103.456959
+still sampling, 27 clusters currently, with log-likelihood -2207.704398, alpha 81.700206
+still sampling, 26 clusters currently, with log-likelihood -2185.073962, alpha 94.062432
+still sampling, 21 clusters currently, with log-likelihood -2167.508062, alpha 98.053086
+still sampling, 29 clusters currently, with log-likelihood -2131.419958, alpha 96.801816
+still sampling, 21 clusters currently, with log-likelihood -2114.517334, alpha 83.935590
+still sampling, 23 clusters currently, with log-likelihood -2090.753169, alpha 62.438241
+still sampling, 20 clusters currently, with log-likelihood -2090.961168, alpha 83.663190
+still sampling, 18 clusters currently, with log-likelihood -2064.312878, alpha 92.336798
+still sampling, 17 clusters currently, with log-likelihood -2050.192337, alpha 77.599058
+still sampling, 21 clusters currently, with log-likelihood -2048.505618, alpha 61.846907
+still sampling, 9 clusters currently, with log-likelihood -2066.350955, alpha 33.995029
+still sampling, 10 clusters currently, with log-likelihood -2051.410900, alpha 47.756916
+still sampling, 13 clusters currently, with log-likelihood -2065.765250, alpha 66.265363
+still sampling, 16 clusters currently, with log-likelihood -2067.605883, alpha 63.667894
+still sampling, 19 clusters currently, with log-likelihood -2063.244637, alpha 105.969290
+still sampling, 26 clusters currently, with log-likelihood -2046.290175, alpha 101.897355
+still sampling, 27 clusters currently, with log-likelihood -2071.390070, alpha 99.934310
+still sampling, 25 clusters currently, with log-likelihood -2048.147703, alpha 98.362048
+still sampling, 24 clusters currently, with log-likelihood -2055.773901, alpha 98.210999
+still sampling, 28 clusters currently, with log-likelihood -2057.469978, alpha 97.336494
+still sampling, 23 clusters currently, with log-likelihood -2055.845854, alpha 71.824201
+still sampling, 17 clusters currently, with log-likelihood -2057.473612, alpha 72.984822
+still sampling, 19 clusters currently, with log-likelihood -2060.182309, alpha 72.620565
+still sampling, 16 clusters currently, with log-likelihood -2072.890755, alpha 60.607103
+still sampling, 18 clusters currently, with log-likelihood -2065.451128, alpha 55.299873
+still sampling, 12 clusters currently, with log-likelihood -2051.480843, alpha 39.873463
+still sampling, 12 clusters currently, with log-likelihood -2056.107720, alpha 71.233826
+still sampling, 14 clusters currently, with log-likelihood -2060.730524, alpha 43.330670
+still sampling, 9 clusters currently, with log-likelihood -2062.535948, alpha 45.630889
+still sampling, 13 clusters currently, with log-likelihood -2064.076370, alpha 53.615792
+still sampling, 12 clusters currently, with log-likelihood -2057.262599, alpha 57.412033
+still sampling, 14 clusters currently, with log-likelihood -2062.918270, alpha 68.711420
+still sampling, 17 clusters currently, with log-likelihood -2052.218078, alpha 60.358782
+still sampling, 20 clusters currently, with log-likelihood -2075.462869, alpha 78.081161
+still sampling, 15 clusters currently, with log-likelihood -2060.020084, alpha 45.546948
+still sampling, 17 clusters currently, with log-likelihood -2055.865866, alpha 101.607987
+still sampling, 24 clusters currently, with log-likelihood -2066.089717, alpha 71.781719
+still sampling, 24 clusters currently, with log-likelihood -2059.964103, alpha 118.595951
+still sampling, 22 clusters currently, with log-likelihood -2067.994180, alpha 120.496242
+still sampling, 19 clusters currently, with log-likelihood -2048.513438, alpha 71.807761
+still sampling, 17 clusters currently, with log-likelihood -2039.909880, alpha 46.462491
+still sampling, 20 clusters currently, with log-likelihood -2054.282863, alpha 97.339471
+still sampling, 24 clusters currently, with log-likelihood -2058.730889, alpha 109.823156
+still sampling, 24 clusters currently, with log-likelihood -2054.116462, alpha 101.733055
+still sampling, 23 clusters currently, with log-likelihood -2041.289605, alpha 92.036165
+still sampling, 25 clusters currently, with log-likelihood -2047.784336, alpha 121.397975
+still sampling, 26 clusters currently, with log-likelihood -2044.496947, alpha 83.004693
+still sampling, 18 clusters currently, with log-likelihood -2064.836664, alpha 96.075466
+still sampling, 20 clusters currently, with log-likelihood -2077.612880, alpha 94.615505
+still sampling, 23 clusters currently, with log-likelihood -2074.065750, alpha 85.101991
+still sampling, 30 clusters currently, with log-likelihood -2059.249541, alpha 148.901591
+still sampling, 43 clusters currently, with log-likelihood -2050.885965, alpha 175.286860
+still sampling, 38 clusters currently, with log-likelihood -2053.803149, alpha 137.346161
+still sampling, 40 clusters currently, with log-likelihood -2070.787746, alpha 196.057585
+still sampling, 31 clusters currently, with log-likelihood -2052.941539, alpha 86.649649
+still sampling, 18 clusters currently, with log-likelihood -2061.040223, alpha 63.600209
+still sampling, 20 clusters currently, with log-likelihood -2053.815202, alpha 110.938457
+still sampling, 19 clusters currently, with log-likelihood -2050.407780, alpha 96.435217
+still sampling, 20 clusters currently, with log-likelihood -2070.130299, alpha 90.118383
+still sampling, 23 clusters currently, with log-likelihood -2044.158357, alpha 126.585370
+still sampling, 35 clusters currently, with log-likelihood -2055.455216, alpha 135.019470
+still sampling, 30 clusters currently, with log-likelihood -2066.926274, alpha 130.442817
+still sampling, 22 clusters currently, with log-likelihood -2048.668190, alpha 47.754436
+still sampling, 16 clusters currently, with log-likelihood -2065.928125, alpha 59.773086
+still sampling, 18 clusters currently, with log-likelihood -2045.812285, alpha 84.184123
+still sampling, 22 clusters currently, with log-likelihood -2053.788440, alpha 80.977601
+still sampling, 16 clusters currently, with log-likelihood -2057.489670, alpha 88.018348
+still sampling, 22 clusters currently, with log-likelihood -2051.828728, alpha 84.285249
+still sampling, 21 clusters currently, with log-likelihood -2057.088111, alpha 104.703590
+still sampling, 25 clusters currently, with log-likelihood -2037.654409, alpha 91.130490
+still sampling, 28 clusters currently, with log-likelihood -2053.222309, alpha 96.192145
+still sampling, 22 clusters currently, with log-likelihood -2028.434681, alpha 72.585199
+still sampling, 23 clusters currently, with log-likelihood -2046.570091, alpha 102.997217
+still sampling, 31 clusters currently, with log-likelihood -2041.848678, alpha 118.211238
+still sampling, 33 clusters currently, with log-likelihood -2054.487323, alpha 100.090451
+still sampling, 20 clusters currently, with log-likelihood -2051.403178, alpha 59.570112
+still sampling, 16 clusters currently, with log-likelihood -2055.849177, alpha 54.438000
+still sampling, 14 clusters currently, with log-likelihood -2055.172511, alpha 58.867711
+still sampling, 13 clusters currently, with log-likelihood -2058.604993, alpha 85.031494
+still sampling, 14 clusters currently, with log-likelihood -2051.876146, alpha 56.165794
+still sampling, 13 clusters currently, with log-likelihood -2048.101223, alpha 75.636759
+still sampling, 17 clusters currently, with log-likelihood -2059.497232, alpha 90.531294
+still sampling, 19 clusters currently, with log-likelihood -2040.156067, alpha 104.836126
+still sampling, 16 clusters currently, with log-likelihood -2054.496779, alpha 52.547014
+still sampling, 16 clusters currently, with log-likelihood -2069.065180, alpha 63.149548
+still sampling, 17 clusters currently, with log-likelihood -2075.992135, alpha 64.701319
+still sampling, 18 clusters currently, with log-likelihood -2043.557042, alpha 86.856948
+still sampling, 18 clusters currently, with log-likelihood -2054.815599, alpha 49.013700
+[2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+ 3 3 3 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 0 0 0 0 0 0 5 0 0 0 5 5 0 0 0 0 0 0 0 5 0 5 0 0 5 0 0 0 0 0 0 0 0 0 5 0 0
+ 0 5 0 0 0 0 5 0 0 0 0 0 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 4 1 4 4 1 4
+ 1 1 4 4 4 4 1 1 1 4 1 4 1 4 1 4 4 4 3 4 4 4 4 1 4 4 4 1 4 4 4 4 4 4 4 4 4
+ 4 1 1 1 4 1 4 1 1 4 1 4 4 1 4 4 1 1 1 4 1 1 4 4 1 4 1 1 4 1 4 4 1 1 4 1 1
+ 1 4 1 1 1 1 1 4 4 4 1 4 1 1 1 4 1 4 4 1 4 4 4 4 1 1 4 4 4 1 4 1 4 4 4 4 1
+ 1 4 1 1 1 4 4 4 1 1 1 4 4 4 1 4 1 4 4 1 4 4 4 4 4 4 1 4 4 1 4 1 4 1 4 1 1
+ 1 4 1 1 1 1 4 1 1 4 4 1 4 4 1 4 4 4 4 1 4 1 1 1 4 1 1 1 1 4 4 4 1 1 1 1 4
+ 4 1 4 1 4 1 4 1 4 1 4 4 1 1 1 4 1 4 4 1 1 4 4 1 1 4 1 4 1 1 1 4 4 4 1 4 1
+ 4 4 1 1 1 1 1 1 1 4 1 4 1 4 4 1 4 4 1 1 4 4 4 4 4 4 4 4 1 4 4 4 4 4 1 1 4
+ 4 4 1 1 4 4 4 4 1 1 1 1 4 4 1 1 4 4 1 1 1 1 4 4 1 1 1 4 1 4 1 4 4 4 1 1 4
+ 1 1 4 4 4 4 3 4 1 1 1 4 4 1 1 4 1 4 1 1 1 1 1 1 4 4 4 1 4 4 1 1 4 4 4 4 1
+ 4 4 1 1 1 4 1 1 4 4 4 4 1 4 4 1 4 1 4 4 1 1 1 1 4 1 4 4 4 1 1 4 1 4 1 4 1
+ 1 4 4 1 1 4 4 4 4 4 1 1 4 1 4 1 1 1 4 1 1 1 4]
+[17 17 17 17 14 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17
+ 17 17 17 17 12 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17
+ 17 17 10 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17
+ 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17
+ 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17
+ 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17
+ 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17
+ 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17 17
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  6  2  2  2  2 15  2
+  8  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  5  7  3  6  2  6  2  2  2
+  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2 13  2  2  2  2  2  2 11
+  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2
+  1  1  1  1  1  1  1  9  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+  0  1  1 16  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1 16  1 16
+  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1 16  1  1  1  1
+  1  1  9 16  1  1 16  1  1  1  1  1  1  1  4  1  1  1  1  1  1  1  1  1  1
+  1  1  1  1 16  1  1 16  1  1  1  1  1 16  1  1  1  1  1  1  1  1  1  1  1
+  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+  1  1  1  1  1  1  1  1  1  1  1 16  1  1  1  1  1  4 16  1  1  1  1  1  1
+  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  4  1  1  1  1  1
+  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1 16  1  1
+ 16  1  1  1  1  1  1  4  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  4  1
+  1  1  1  1  1  1  1  1  9  0  1  1  1  1  1  9  1  1  1  1  1  1  1  1  1
+  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+  1  1  1  1  1  1  1  1  1  1  1  1  4  1  1  1  1  1  1  1  1  1  1  1  1
+  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  5  1  1  1  1  1  1  1  1]
+[2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 0 2 2 2 2 2 2 2 2 2 2 2 2 2 2 0 2 2 2 2 2
+ 2 2 2 2 0 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 0 2 2 2 2 2 2 2 0 0 2 2 2 2 2 2 2 2 2 0 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 0 2 2 2 0 2 2 2 2 2 2 2 2 2 2 2 2 1 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 0 2 2 2 0 2 2 2 0 2 2 2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]

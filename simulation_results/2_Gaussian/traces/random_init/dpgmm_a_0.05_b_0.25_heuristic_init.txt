@@ -1,0 +1,29 @@
+# clusters initialized with n_components = (0.5 * np.log(X.shape[0])).astype(int)
+Initialized collapsed Gibbs sampling with 3 clusters
+still sampling, 3 clusters currently, with log-likelihood -6352.243147, alpha 41.553681
+still sampling, 10 clusters currently, with log-likelihood -6310.286699, alpha 20.772027
+still sampling, 8 clusters currently, with log-likelihood -6219.063663, alpha 23.633339
+still sampling, 8 clusters currently, with log-likelihood -5997.660562, alpha 12.448656
+still sampling, 6 clusters currently, with log-likelihood -5547.874592, alpha 24.305738
+still sampling, 7 clusters currently, with log-likelihood -4343.345832, alpha 30.771833
+still sampling, 6 clusters currently, with log-likelihood -2623.002736, alpha 30.672884
+still sampling, 6 clusters currently, with log-likelihood -2578.824658, alpha 18.931988
+still sampling, 5 clusters currently, with log-likelihood -2582.235854, alpha 14.729570
+still sampling, 4 clusters currently, with log-likelihood -2573.618706, alpha 6.589565
+still sampling, 2 clusters currently, with log-likelihood -2587.771246, alpha 0.604646
+still sampling, 3 clusters currently, with log-likelihood -2580.746618, alpha 15.036548
+still sampling, 3 clusters currently, with log-likelihood -2570.738890, alpha 10.215609
+still sampling, 3 clusters currently, with log-likelihood -2580.253051, alpha 4.518571
+still sampling, 3 clusters currently, with log-likelihood -2570.738890, alpha 10.692166
+still sampling, 5 clusters currently, with log-likelihood -2569.950244, alpha 23.716184
+still sampling, 5 clusters currently, with log-likelihood -2573.532628, alpha 9.193190
+still sampling, 3 clusters currently, with log-likelihood -2562.177004, alpha 16.792123
+still sampling, 3 clusters currently, with log-likelihood -2572.102458, alpha 12.998531
+still sampling, 4 clusters currently, with log-likelihood -2573.696444, alpha 19.170492
+still sampling, 3 clusters currently, with log-likelihood -2570.738890, alpha 2.540702
+still sampling, 2 clusters currently, with log-likelihood -2578.404000, alpha 1.780407
+still sampling, 2 clusters currently, with log-likelihood -2578.404000, alpha 4.010414
+[0 4 2 ..., 3 3 5]
+[1 1 1 ..., 0 0 0]
+[2 2 2 ..., 0 0 0]
+
