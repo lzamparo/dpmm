@@ -2,6 +2,7 @@
 import itertools, random, sys
 
 import numpy as np
+from numpy.random import choice, uniform
 from scipy import linalg
 import pylab as pl
 import matplotlib as mpl
@@ -74,16 +75,28 @@ class DPMM:
     
     def split_merge_iteration(self,X):
         """ This is the cycling randomized split & merge according to algorithm of Jain & Neal 2004 """
-        # (1) choose 2 data points d,e
+        # (1) choose 2 data points
+        d, e = choice(D, 2, replace=False) 
+        
         # (2) grab all points in the component for d
+        C_d = self.z[d]
+        
         # (2) grab all points in the component for e
+        C_e = self.z[e]
         # (2) form the union of the set of points d,e, but withhold the points themselves
+
         # (3) define the launch state: partition the points uniformly at random
+
         # (3) define the launch state: perform num_inner_itns restricted Gibbs sampling scans
+
         # (4) if z[d] == z[e] propose a split: c^{split} initialized from c^{launch}
+
         #       adopt the split if move is accepted
+
         # (5) if z[d] != z[e] propose a merge: c^{merge} initialized from c^{launch}
+
         #       adopt the merge if move is accepted 
+
         
         pass
 
@@ -127,10 +140,6 @@ class DPMM:
             previous_components = self.n_components
         elif self.n_components != -1 and do_kmeans:
             # init with k-means
-            #File "Dpmm.py", line 123, in initialize_model
-                #self.params = dict([(j, Gaussian(X=np.zeros((0, X.shape[1])), mu_0=m)) for j,m in enumerate(means_from_kmeans)])
-            #File "/home/lee/projects/dpmm/dpmm/Gaussian.py", line 31, in __init__
-                #assert(self._mu_0.shape == (1, self.n_var))            
             batch_size = (np.floor(X.shape[0] / 10.0)).astype(int)
             mbk = MiniBatchKMeans(init='k-means++', n_clusters=self.n_components, batch_size=batch_size,
                                   n_init=10, max_no_improvement=10, verbose=0)
