@@ -10,24 +10,35 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
     """
 
     for d in xrange(D):
-
+        
+        # retain the previous cluster indicator of d
         old_t = z_D[d]
 
+        # make sure z_D[d] is no longer part of the set
+        # of points associated with old_t
         if inv_z_T is not None:
             inv_z_T[old_t].remove(d)
 
+        # remove the data for d from the sum of the elements assigned to component old_t
         N_TV[old_t, :] -= N_DV[d, :]
+        # remove sum along data features for component old_t (N_T = N_DV.sum(1))
         N_T[old_t] -= N_D[d]
+        # decrease the appearances of old_t in z_D
         D_T[old_t] -= 1
 
+        # compute partial log probability of assigning the data point to component
         seterr(divide='ignore')
         log_dist = log(D_T)
         seterr(divide='warn')
 
+        # if this component was a singleton, keep the index.  Otherwise, activate a new component
         idx = old_t if D_T[old_t] == 0 else inactive_topics.pop()
         active_topics.add(idx)
+        # log probability of assigning this point to the new component.
         log_dist[idx] = log(alpha)
 
+        # compute log remaining log probability of assigning d over components
+        # note: gammaln(x) := ln(abs(gamma(x)))
         for t in active_topics:
             log_dist[t] += gammaln(N_T[t] + beta)
             log_dist[t] -= gammaln(N_D[d] + N_T[t] + beta)
@@ -35,17 +46,23 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
             log_dist[t] += gammaln(N_DV[d, :] + tmp).sum()
             log_dist[t] -= gammaln(tmp).sum()
 
+        # sample from log_dist to get the component for d
         [t] = log_sample(log_dist)
 
+        # assign component t as responsible for point d
         z_D[d] = t
 
+        # assign point d as part of component t
         if inv_z_T is not None:
             inv_z_T[t].add(d)
 
+        # adjust the sufficient statistics for component t 
+        # to account for the addition of d
         N_TV[t, :] += N_DV[d, :]
         N_T[t] += N_D[d]
         D_T[t] += 1
 
+        # accounting of active topics:
         if t != idx:
             active_topics.remove(idx)
             inactive_topics.add(idx)
