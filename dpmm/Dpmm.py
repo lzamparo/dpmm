@@ -12,7 +12,6 @@ from sklearn.cluster import MiniBatchKMeans
 from Gaussian import Gaussian
 
 epsilon = 10e-8
-max_iter = 100
 BOOTSTRAP = False
 
 """
@@ -100,7 +99,7 @@ class DPMM:
         
         pass
 
-    def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False):
+    def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False, max_iter=100):
         """ according to algorithm 3 of collapsed Gibbs sampling in Neal 2000:
         http://www.stat.purdue.edu/~rdutta/24.PDF """
         
@@ -345,7 +344,10 @@ if __name__ == "__main__":
 
     # Generate random sample, two components
     np.random.seed(0)
-
+    
+    # Sample for a maximum of this many iterations
+    max_iter = 100
+    
     # 4, 2-dimensional Gaussians
     C = np.array([[0., -0.1], [1.7, .4]])
     X = np.r_[np.dot(np.random.randn(n_samples/4., 2), C),
@@ -394,7 +396,7 @@ if __name__ == "__main__":
         pre_alpha = 0.5
         n_components = pre_alpha * np.log(X.shape[0])
         dpmm = DPMM(n_components=n_components.astype(int),alpha=pre_alpha,do_sample_alpha=True) # -1, 1, 2, 5
-        dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True)
+        dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True,max_iter=max_iter)
 
     color_iter = itertools.cycle(['r', 'g', 'b', 'c', 'm'])
 
