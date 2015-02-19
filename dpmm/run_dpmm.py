@@ -23,7 +23,7 @@ p.add_argument('--alpha', type=float, metavar='<alpha>', default=1.0,
                help='concentration parameter for the DP')
 p.add_argument('--num-itns', type=int, metavar='<num-itns>', default=5000,
                help='number of iterations')
-p.add_argument('--save', type=int, metavar='<save>',
+p.add_argument('--save', metavar='<save>',
                help='pickle the DPMM to this file')
 
 args = p.parse_args()
