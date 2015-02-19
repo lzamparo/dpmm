@@ -4,8 +4,6 @@ import itertools, random, sys
 import numpy as np
 from numpy.random import choice, uniform
 from scipy import linalg
-import pylab as pl
-import matplotlib as mpl
 import math
 
 from sklearn.cluster import MiniBatchKMeans
@@ -338,6 +336,9 @@ def fit_bootstrap(X):
 
 
 if __name__ == "__main__":
+
+    import pylab as pl
+    import matplotlib as mpl    
 
     # Number of samples per component
     n_samples = 800
