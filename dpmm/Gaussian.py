@@ -3,13 +3,8 @@ import itertools, random, sys
 
 import numpy as np
 from scipy import linalg
-import pylab as pl
-import matplotlib as mpl
 import math
 
-epsilon = 10e-8
-max_iter = 100
-BOOTSTRAP = True
 
 class Gaussian:
     def __init__(self, X=np.zeros((0,1)), kappa_0=0, nu_0=1.0001, mu_0=None, 
