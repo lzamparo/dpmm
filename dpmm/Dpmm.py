@@ -6,6 +6,8 @@ from numpy.random import choice, uniform
 from scipy import linalg
 import math
 
+import contextlib,time
+
 from sklearn.cluster import MiniBatchKMeans
 from Gaussian import Gaussian
 
@@ -33,6 +35,13 @@ Another one is:
 
 So we have P(y | Φ_{1:K}, β_{1:K}) = \sum_{j=1}^K β_j Norm(y | μ_j, S_j)
 """
+@contextlib.contextmanager
+def timeit():
+  t=time.time()
+  yield
+  print(time.time()-t,"sec")
+
+
 class DPMM:
     def _get_means(self):
         return np.array([g.mean for g in self.params.itervalues()])
@@ -110,8 +119,9 @@ class DPMM:
                 and (previous_components != self.n_components
                 or abs((previous_means - self._get_means()).sum()) > epsilon)):
             previous_means = self._get_means()
-            previous_components = self.n_components            
-            self.gibbs_iteration(X, do_sample_alpha)
+            previous_components = self.n_components 
+            with timeit():
+                self.gibbs_iteration(X, do_sample_alpha)
             n_iter += 1
             print "still sampling, %i clusters currently, with log-likelihood %f, alpha %f" % (self.n_components, self.log_likelihood(), self.alpha)
 

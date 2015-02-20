@@ -6,6 +6,8 @@ from numpy.random import choice, uniform
 from scipy import linalg
 import math
 
+import contextlib,time
+
 from sklearn.cluster import MiniBatchKMeans
 from Gaussian_numba import Gaussian
 
@@ -13,6 +15,12 @@ epsilon = 10e-8
 BOOTSTRAP = False
 
 import numba
+
+@contextlib.contextmanager
+def timeit():
+  t=time.time()
+  yield
+  print(time.time()-t,"sec")
 
 """
 Dirichlet process mixture model (for N observations y_1, ..., y_N)
@@ -35,9 +43,9 @@ Another one is:
 
 So we have P(y | Φ_{1:K}, β_{1:K}) = \sum_{j=1}^K β_j Norm(y | μ_j, S_j)
 """
-@numba.jit
+
 class DPMM:
-    @numba.jit
+
     def _get_means(self):
         return np.array([g.mean for g in self.params.itervalues()])
 
@@ -102,7 +110,7 @@ class DPMM:
         
         pass
     
-    @numba.jit
+    
     def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False, max_iter=100):
         """ according to algorithm 3 of collapsed Gibbs sampling in Neal 2000:
         http://www.stat.purdue.edu/~rdutta/24.PDF """
@@ -116,14 +124,18 @@ class DPMM:
                 and (previous_components != self.n_components
                 or abs((previous_means - self._get_means()).sum()) > epsilon)):
             previous_means = self._get_means()
-            previous_components = self.n_components            
-            self.gibbs_iteration(X, do_sample_alpha)
+            previous_components = self.n_components
+            # randomize the order of points for the scan
+            indices = [i for i in xrange(X.shape[0])]
+            np.random.shuffle(indices)
+            with timeit():
+              self.gibbs_iteration(X, indices, do_sample_alpha)
             n_iter += 1
             print "still sampling, %i clusters currently, with log-likelihood %f, alpha %f" % (self.n_components, self.log_likelihood(), self.alpha)
 
         self.means_ = self._get_means() 
     
-    @numba.jit
+
     def initialize_model(self, X, do_kmeans=False):
         """ Initialize each component of the model in an appropriate way.  This is done one of three ways:
         - one component per point.  
@@ -170,12 +182,10 @@ class DPMM:
         return previous_means, previous_components
 
     @numba.jit
-    def gibbs_iteration(self, X, do_sample_alpha=False):
+    def gibbs_iteration(self, X, indices, do_sample_alpha=False):
         """ Perform one full iteration of gibbs sampling """
         
-        # randomize the order of points for the scan
-        indices = [i for i in xrange(X.shape[0])]
-        for i in np.random.permutation(indices):
+        for i in indices:
             # remove X[i]'s sufficient statistics from z[i]
             self.params[self.z[i]].rm_point(X[i])
             # if it empties the cluster, remove it and decrease K
@@ -200,16 +210,16 @@ class DPMM:
             tmp.append(prior_predictive * prob_new_cluster)
 
             # normalize P(z[i]) (tmp above)
-            tmp = np.array(tmp)
-            tmp /= tmp.sum()
+            tmp_arr = np.array(tmp)
+            tmp_arr /= tmp_arr.sum()
 
             # sample z[i] ~ P(z[i])
             rdm = np.random.rand()
-            total = tmp[0]
+            total = tmp_arr[0]
             k = 0
             while (rdm > total):
                 k += 1
-                total += tmp[k]
+                total += tmp_arr[k]
             # add X[i]'s sufficient statistics to cluster z[i]
             new_key = max(self.params.keys()) + 1
             if k == self.n_components: # create a new cluster

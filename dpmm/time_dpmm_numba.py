@@ -28,13 +28,6 @@ p.add_argument('--save', metavar='<save>',
 
 args = p.parse_args()
 
-
-@contextlib.contextmanager
-def timeit():
-  t=time.time()
-  yield
-  print(time.time()-t,"sec")
-
 # load data
 try:
         h5file = tables.open_file(args.i,'r')
@@ -49,11 +42,8 @@ finally:
 # initialize DPMM
 pre_alpha = 0.5
 n_components = pre_alpha * np.log(X.shape[0])
- 
-for _ in xrange(10):
-  with timeit():
-    dpmm = DPMM(n_components=n_components.astype(int),alpha=pre_alpha,do_sample_alpha=True)
-    dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True,max_iter=args.num_itns)
+dpmm = DPMM(n_components=n_components.astype(int),alpha=pre_alpha,do_sample_alpha=True)
+dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True,max_iter=args.num_itns)
 
 # save the dpmm to outfile
 #pickle.dump(dpmm, open( args.save, "wb" ) )

@@ -7,9 +7,9 @@ import math
 
 import numba
 
-@numba.jit
+
 class Gaussian:
-    @numba.jit
+    
     def __init__(self, X=np.zeros((0,1)), kappa_0=0, nu_0=1.0001, mu_0=None, 
             Psi_0=None): # Psi is also called Lambda or T
         # See http://en.wikipedia.org/wiki/Conjugate_prior 
