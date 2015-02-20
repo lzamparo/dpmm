@@ -5,8 +5,11 @@ import numpy as np
 from scipy import linalg
 import math
 
+import numba
 
+@numba.jit
 class Gaussian:
+    @numba.jit
     def __init__(self, X=np.zeros((0,1)), kappa_0=0, nu_0=1.0001, mu_0=None, 
             Psi_0=None): # Psi is also called Lambda or T
         # See http://en.wikipedia.org/wiki/Conjugate_prior 
@@ -43,12 +46,12 @@ class Gaussian:
         else:
             self.default()
 
-
+    @numba.jit
     def default(self):
         self.mean = np.matrix(np.zeros((1, self.n_var))) # TODO init to mean of the dataset
         self.covar = 100.0 * np.matrix(np.eye(self.n_var)) # TODO change 100
 
-
+    @numba.jit    
     def recompute_ss(self):
         """ need to have actualized _X, _sum, and _square_sum """ 
         self.n_points = self._X.shape[0]
@@ -72,7 +75,7 @@ class Gaussian:
         assert(np.linalg.det(self.covar) != 0)
         self.nu = nu - self.n_var + 1
 
-
+    @numba.jit    
     def inv_covar(self):
         """ memoize the inverse of the covariance matrix """
         if self._hash_covar != hash(self.covar):
@@ -80,7 +83,7 @@ class Gaussian:
             self._inv_covar = np.linalg.inv(self.covar)
         return self._inv_covar
 
-
+    @numba.jit
     def fit(self, X):
         """ to add several points at once without recomputing """
         self.n_points = X.shape[0]
@@ -90,7 +93,7 @@ class Gaussian:
         self._square_sum = np.matrix(X).transpose() * np.matrix(X)
         self.recompute_ss()
 
-    
+    @numba.jit
     def add_point(self, x):
         """ add a point to this Gaussian cluster """
         if self.n_points <= 0:
@@ -103,7 +106,7 @@ class Gaussian:
             self._square_sum += np.matrix(x).transpose() * np.matrix(x)
         self.recompute_ss()
 
-
+    @numba.jit
     def rm_point(self, x):
         """ remove a point from this Gaussian cluster """
         assert(self._X.shape[0] > 0)
@@ -121,7 +124,7 @@ class Gaussian:
         self._square_sum -= tmp.transpose() * tmp
         self.recompute_ss()
 
-
+    @numba.jit
     def pdf(self, x):
         """ probability density function for a multivariate Gaussian """
         size = len(x)

@@ -7,10 +7,12 @@ from scipy import linalg
 import math
 
 from sklearn.cluster import MiniBatchKMeans
-from Gaussian import Gaussian
+from Gaussian_numba import Gaussian
 
 epsilon = 10e-8
 BOOTSTRAP = False
+
+import numba
 
 """
 Dirichlet process mixture model (for N observations y_1, ..., y_N)
@@ -33,7 +35,9 @@ Another one is:
 
 So we have P(y | Φ_{1:K}, β_{1:K}) = \sum_{j=1}^K β_j Norm(y | μ_j, S_j)
 """
+@numba.jit
 class DPMM:
+    @numba.jit
     def _get_means(self):
         return np.array([g.mean for g in self.params.itervalues()])
 
@@ -41,7 +45,7 @@ class DPMM:
     def _get_covars(self):
         return np.array([g.covar for g in self.params.itervalues()])
 
-
+    
     def __init__(self, n_components=-1, alpha=1.0, do_sample_alpha=False, a=0.05, b=0.25):
         self.params = {0: Gaussian()}
         self.n_components = n_components
@@ -50,7 +54,8 @@ class DPMM:
         if do_sample_alpha:
             self.alpha_hyperpriors = (a,b)
             self.alpha_samples = []
-        
+    
+    @numba.jit    
     def sample_alpha(self):
         """ Sample a new value for α based on the formulation in 
         West (http://web.cse.ohio-state.edu/~kulis/teaching/788_sp12/DP.learnalpha.pdf):
@@ -96,7 +101,8 @@ class DPMM:
 
         
         pass
-
+    
+    @numba.jit
     def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False, max_iter=100):
         """ according to algorithm 3 of collapsed Gibbs sampling in Neal 2000:
         http://www.stat.purdue.edu/~rdutta/24.PDF """
@@ -116,7 +122,8 @@ class DPMM:
             print "still sampling, %i clusters currently, with log-likelihood %f, alpha %f" % (self.n_components, self.log_likelihood(), self.alpha)
 
         self.means_ = self._get_means() 
-
+    
+    @numba.jit
     def initialize_model(self, X, do_kmeans=False):
         """ Initialize each component of the model in an appropriate way.  This is done one of three ways:
         - one component per point.  
@@ -162,6 +169,7 @@ class DPMM:
         print "Initialized collapsed Gibbs sampling with %i clusters" % (self.n_components)
         return previous_means, previous_components
 
+    @numba.jit
     def gibbs_iteration(self, X, do_sample_alpha=False):
         """ Perform one full iteration of gibbs sampling """
         
@@ -227,7 +235,7 @@ class DPMM:
         Y = np.array([mapper.index(self.z[i]) for i in range(X.shape[0])])
         return Y
 
-
+    @numba.jit
     def log_likelihood(self): # TODO! currently it's far from the full log-likelihood
         #logprior = self._bound_concentration()
         #logprior += self._bound_means()
