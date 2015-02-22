@@ -3,6 +3,13 @@ from scipy.special import gammaln
 
 from kale.math_utils import log_sample, vi
 
+import contextlib,time
+
+#@contextlib.contextmanager
+#def timeit():
+  #t=time.time()
+  #yield
+  #print(time.time()-t,"sec")
 
 def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactive_topics, N_TV, N_T, D_T):
     """
@@ -67,7 +74,6 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
             active_topics.remove(idx)
             inactive_topics.add(idx)
 
-
 def inference(N_DV, alpha, beta, z_D, num_itns, true_z_D=None):
     """
     Algorithm 3.
@@ -82,8 +88,8 @@ def inference(N_DV, alpha, beta, z_D, num_itns, true_z_D=None):
     active_topics = set(unique(z_D))
     inactive_topics = set(xrange(T)) - active_topics
 
-    N_TV = zeros((T, V), dtype=int)
-    N_T = zeros(T, dtype=int)
+    N_TV = zeros((T, V), dtype=int) # sum of the elements assigned to component T
+    N_T = zeros(T, dtype=int)   # number of points assigned to component T
 
     for d in xrange(D):
         N_TV[z_D[d], :] += N_DV[d, :]
@@ -92,7 +98,6 @@ def inference(N_DV, alpha, beta, z_D, num_itns, true_z_D=None):
     D_T = bincount(z_D, minlength=T)
 
     for itn in xrange(num_itns):
-
         iteration(V, D, N_DV, N_D, alpha, beta, z_D, None, active_topics, inactive_topics, N_TV, N_T, D_T)
 
         if true_z_D is not None:
@@ -103,7 +108,7 @@ def inference(N_DV, alpha, beta, z_D, num_itns, true_z_D=None):
             print '%d topics' % len(active_topics)
             print 'VI: %f bits (%f bits max.)' % (v, log2(D))
 
-            if v < 1e-6:
+            if v < 1e-6 and itn > (num_itns // 2):
                 break
 
     return z_D
