@@ -45,5 +45,5 @@ dpmm = DPMM(n_components=n_components.astype(int),alpha=pre_alpha,do_sample_alph
 dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True,max_iter=args.num_itns)
 
 # save the dpmm to outfile
-#pickle.dump(dpmm, open( args.save, "wb" ) )
+pickle.dump(dpmm, open( args.save, "wb" ) )
 
