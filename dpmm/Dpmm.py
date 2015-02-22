@@ -51,7 +51,7 @@ class DPMM:
         return np.array([g.covar for g in self.params.itervalues()])
 
 
-    def __init__(self, n_components=-1, alpha=1.0, do_sample_alpha=False, a=0.05, b=0.25):
+    def __init__(self, n_components=-1, alpha=1.0, do_sample_alpha=False, a=2.0, b=2.0):
         self.params = {0: Gaussian()}
         self.n_components = n_components
         self.means_ = self._get_means()
