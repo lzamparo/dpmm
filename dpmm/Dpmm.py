@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
 import itertools, random, sys
 
+from collections import OrderedDict
+
 import numpy as np
 from numpy.random import choice, uniform
 from scipy import linalg
 import math
 
 import contextlib,time
+from collections import defaultdict
 
 from sklearn.cluster import MiniBatchKMeans
 from Gaussian import Gaussian
+from kale.math_utils import sample
 
 epsilon = 10e-8
 BOOTSTRAP = False
@@ -79,32 +83,103 @@ class DPMM:
         """ according to algorithm of Jain & Neal 2004 """        
         pass
     
-    def split_merge_iteration(self,X):
+    def split_merge_iteration(self, X, inner_itns=5):
         """ This is the cycling randomized split & merge according to algorithm of Jain & Neal 2004 """
         # (1) choose 2 data points
-        d, e = choice(D, 2, replace=False) 
+        d, e = choice(X.shape[0], 2, replace=False) 
         
-        # (2) grab all points in the component for d
-        C_d = self.z[d]
+        # (2) grab all points in the components for d,e
+        C_d, C_e = self.z[d], self.z[e]
         
-        # (2) grab all points in the component for e
-        C_e = self.z[e]
-        # (2) form the union of the set of points d,e, but withhold the points themselves
+        # (2) form the union of the set of points d,e, 
+        # but withhold the points themselves
+        inv_C_d, inv_C_e = set([d]), set([e])
+      
+        d_component = Gaussian(X=X[d,:])
+        e_component = Gaussian(X=X[e,:])
 
+        if C_d == C_e:
+          pts = self.inv_z[C_d] - set([d,e])
+        else:
+          pts = (self.inv_z[C_d] | self.inv_z[C_e]) - set([d,e]) 
+        
         # (3) define the launch state: partition the points uniformly at random
-
+        restricted_z = {}
+        for pt in pts:
+          if uniform() < 0.5:
+            # add to d_component
+            d_component.add_point(X[pt,:])
+            inv_C_d.add(pt)
+            restricted_z[pt] = C_d
+          else:
+            e_component.add_point(X[pt,:])
+            inv_C_e.add(pt)
+            restricted_z[pt] = C_e
+            
         # (3) define the launch state: perform num_inner_itns restricted Gibbs sampling scans
-
+        restricted_params = OrderedDict()
+        restricted_params[C_d] = d_component
+        restricted_params[C_e] = e_component
+        for itn in xrange(inner_itns):
+          self.restricted_gibbs_pass(X, pts, restricted_params, restricted_z, inv_C_d, inv_C_e)
+        
         # (4) if z[d] == z[e] propose a split: c^{split} initialized from c^{launch}
-
-        #       adopt the split if move is accepted
+        acc = 0.0
+        if C_d == C_e:
+          q_1 = 
+          # adopt the split if move is accepted
+          
 
         # (5) if z[d] != z[e] propose a merge: c^{merge} initialized from c^{launch}
-
+        else:
         #       adopt the merge if move is accepted 
 
         
         pass
+      
+    def restricted_gibbs_pass(self, X, pts, restricted_params, restricted_z, pts_in_d, pts_in_e):
+      """ perform a restricted gibbs sampling pass over data X and temporary model params.
+      X : (data,features) numpy array, the whole data set
+      pts: indices of the restricted data set 
+      restricted_params: a dict of the params for both clusters {id: Gaussian}
+      restricted_z: {pt in X: component responsible}      
+      pts_in_d: {component: set of pts in X}
+      pts_in_e: {component: set of pts in X}
+      """
+      
+      # Go through all points in the restricted set S
+      for i in np.random.permutation(pts):
+        # remove S[i]'s sufficient statistics from restricted_z[i]
+        restricted_params[restricted_z[i]].rm_point(X[i])
+        if i in pts_in_d:
+          pts_in_d.remove(i)
+        else:
+          pts_in_e.remove(i)
+          
+        tmp = []
+        for k, param in restricted_params.iteritems():
+            # compute P_k(X[i]) = P(X[i] | X[-i] = k)
+            marginal_likelihood_Xi = param.pdf(X[i])
+            # set N_{k,-i} = dim({X[-i] = k})
+            # compute un-normalized P(restricted_z[i] = k | restricted_z[-i], X)
+            mixing_Xi = param.n_points 
+            tmp.append(marginal_likelihood_Xi * mixing_Xi)
+
+        # normalize P(z[i]) (tmp above)
+        tmp = np.array(tmp)
+        tmp /= tmp.sum()
+
+        # sample z[i] ~ P(z[i])
+        k = sample(tmp)
+        
+        # add X[i]'s sufficient statistics to cluster z[i]
+        if k == 0:
+          pts_in_d.add(i)
+        else:
+          pts_in_e.add(i)
+        restricted_z[i] = restricted_params.keys()[k]
+        restricted_params[restricted_z[i]].add_point(X[i])        
+        
 
     def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False, max_iter=100):
         """ according to algorithm 3 of collapsed Gibbs sampling in Neal 2000:
@@ -121,7 +196,11 @@ class DPMM:
             previous_means = self._get_means()
             previous_components = self.n_components 
             with timeit():
-                self.gibbs_iteration(X, do_sample_alpha)
+                self.gibbs_iteration(X)
+                if do_sample_alpha:
+                    new_alpha = self.sample_alpha()
+                    self.alpha_samples.append(self.alpha)
+                    self.alpha = new_alpha                
             n_iter += 1
             print "still sampling, %i clusters currently, with log-likelihood %f, alpha %f" % (self.n_components, self.log_likelihood(), self.alpha)
 
@@ -169,10 +248,15 @@ class DPMM:
             for i in xrange(X.shape[0]):
                 self.params[self.z[i]].add_point(X[i])                
 
+        # initialize the components to points dict
+        self.inv_z = defaultdict(set)
+        for pt in xrange(X.shape[0]):
+          self.inv_z[self.z[pt]].add(pt)
+          
         print "Initialized collapsed Gibbs sampling with %i clusters" % (self.n_components)
         return previous_means, previous_components
 
-    def gibbs_iteration(self, X, do_sample_alpha=False):
+    def gibbs_iteration(self, X):
         """ Perform one full iteration of gibbs sampling """
         
         # randomize the order of points for the scan
@@ -206,6 +290,7 @@ class DPMM:
             tmp /= tmp.sum()
 
             # sample z[i] ~ P(z[i])
+            # TODO: replace with k = kale.math_utils.sample(tmp)
             rdm = np.random.rand()
             total = tmp[0]
             k = 0
@@ -213,8 +298,8 @@ class DPMM:
                 k += 1
                 total += tmp[k]
             # add X[i]'s sufficient statistics to cluster z[i]
-            new_key = max(self.params.keys()) + 1
             if k == self.n_components: # create a new cluster
+                new_key = max(self.params.keys()) + 1
                 self.z[i] = new_key
                 self.n_components += 1
                 self.params[new_key] = Gaussian(X=np.matrix(X[i]))
@@ -223,10 +308,7 @@ class DPMM:
                 self.params[self.params.keys()[k]].add_point(X[i])
             assert(k < self.n_components)
        
-        if do_sample_alpha:
-            new_alpha = self.sample_alpha()
-            self.alpha_samples.append(self.alpha)
-            self.alpha = new_alpha
+      
 
     def predict(self, X):
         """ produces and returns the clustering of the X data """
@@ -404,7 +486,7 @@ if __name__ == "__main__":
     else:
         # n_components is the number of initial clusters (at random, TODO k-means init)
         # -1 means that we initialize with 1 cluster per point
-        pre_alpha = 0.5
+        pre_alpha = 1.0
         n_components = pre_alpha * np.log(X.shape[0])
         dpmm = DPMM(n_components=n_components.astype(int),alpha=pre_alpha,do_sample_alpha=True) # -1, 1, 2, 5
         dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True,max_iter=max_iter)
