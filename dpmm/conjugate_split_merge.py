@@ -28,7 +28,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
     num_inner_itns: number of restricted Gibbs steps to take per M-H step.
     """
     
-    # 
+    # sufficient statistics for new clusters s,v
     N_s_V = empty(V, dtype=int)
     N_t_V = empty(V, dtype=int)
 
@@ -43,20 +43,20 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
     else:
         s = z_D[d]
 
-    # (2) grab all points in the component for d
+    # (2) assign d to component s
     inv_z_s = set([d])
-    # N_s_V is assigned the data for row d
+    # potential new component s is assigned the data for row d
     N_s_V[:] = N_DV[d, :]
-    # N_s gets sum along columns for d (N_DV.sum(1))
+    # update sufficient statistics needed for s : sum along columns for d (N_DV.sum(1))
     N_s = N_D[d]
     D_s = 1
 
-    # (2) grab all points in the component for e
+    # (2) assign e to potential component t
     t = z_D[e]
     inv_z_t = set([e])
-    # N_t_V is assigned the data for row e
+    # potential new component t is assigned the data for row e
     N_t_V[:] = N_DV[e, :]
-    # N_t gets sum along columns for e (N_DV.sum(1))
+    # update sufficient statistics needed for t : sum along columns for e (N_DV.sum(1))
     N_t = N_D[e]
     D_t = 1
 
@@ -70,14 +70,14 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
     for f in idx:                   
         if uniform() < 0.5:
             inv_z_s.add(f)
-            # add row F from data to V for component s
+            # add sufficient statistics contribution for row F from data to V for component s
             N_s_V += N_DV[f, :]
             # N_s gets sum along columns for f (N_DV.sum(1))
             N_s += N_D[f]
             D_s += 1
         else:
             inv_z_t.add(f)
-            # add row F from data to V for component s
+            # add sufficient statistics contribution for row F data to V for component t
             N_t_V += N_DV[f, :]
             # N_t gets sum along columns for f (N_DV.sum(1))
             N_t += N_D[f]
@@ -118,6 +118,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
             log_dist[1] += gammaln(N_DV[f, :] + tmp).sum()
             log_dist[1] -= gammaln(tmp).sum()
 
+            # normalize conditional distributions 
             log_dist -= log_sum_exp(log_dist)
 
             if inner_itn == num_inner_itns - 1 and z_D[d] != z_D[e]:
@@ -136,7 +137,8 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
                 N_t += N_D[f]
                 D_t += 1
 
-            # not sure what this is for...
+            # keep track of last transition for restricted Gibbs pass
+            # (C.f Jain & Neal)
             if inner_itn == num_inner_itns - 1:
                 acc += log_dist[u]
 
@@ -147,7 +149,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
         # quantity (2): P(c^{split}) / P(c)
         acc += log(alpha)
         acc += gammaln(D_s) + gammaln(D_t) - gammaln(D_T[t])
-        # quantity (): 
+        # quantity (1?): 
         acc += gammaln(beta) + gammaln(N_T[t] + beta)
         acc -= gammaln(N_s + beta) + gammaln(N_t + beta)
         # quantity (3): 
