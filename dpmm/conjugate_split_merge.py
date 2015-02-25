@@ -121,6 +121,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
             # normalize conditional distributions 
             log_dist -= log_sum_exp(log_dist)
 
+            # to calculate [1] for merging, set to merge on last iteration
             if inner_itn == num_inner_itns - 1 and z_D[d] != z_D[e]:
                 u = 0 if z_D[f] == s else 1
             else:
@@ -144,7 +145,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
 
     # (4) propose a split: c^{split} initialized from c^{launch}
     if z_D[d] == z_D[e]:
-
+        # calculate quantity [1] for splitting
         acc *= -1.0
         # quantity (2): P(c^{split}) / P(c)
         acc += log(alpha)

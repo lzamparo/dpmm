@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 import numpy as np
 from numpy.random import choice, uniform
-from numpy import log
+from numpy import log, seterr
 from scipy import linalg
 from scipy.special import gammaln
 import math
@@ -97,7 +97,7 @@ class DPMM:
             for _ in xrange(3):
                 with timeit():
                     self.split_merge_iteration(X)
-                self.gibbs_iteration(X)  
+            self.gibbs_iteration(X)  
             if do_sample_alpha:
                 new_alpha = self.sample_alpha()
                 self.alpha_samples.append(self.alpha)
@@ -125,12 +125,14 @@ class DPMM:
         if C_d == C_e:
             pts = self.inv_z[C_d] - set([d,e])
             do_split = True
+            C_e = max(self.params.keys()) + 1
         else:
             pts = (self.inv_z[C_d] | self.inv_z[C_e]) - set([d,e]) 
             do_split = False
 
         # (3) define the launch state: partition the points uniformly at random
         restricted_z = {}
+        assert(C_d != C_e)
         for pt in pts:
             if uniform() < 0.5:
                 # add to d_component
@@ -142,58 +144,56 @@ class DPMM:
                 inv_C_e.add(pt)
                 restricted_z[pt] = C_e
 
+        assert(len(pts) == len(inv_C_d) + len(inv_C_e) - 2)
         # (3) define the launch state: perform num_inner_itns restricted Gibbs sampling scans
         restricted_params = OrderedDict()
         restricted_params[C_d] = d_component
         restricted_params[C_e] = e_component
 
         acc = 0.0
+        log_probs = 0.0
         for itn in xrange(inner_itns):
             last_itn = True if itn == inner_itns - 1 else False
-            prob = self.restricted_gibbs_pass(X, pts, restricted_params, restricted_z, inv_C_d, inv_C_e, last_itn, do_split)
-
-        acc += log(prob)
+            log_probs = self.restricted_gibbs_pass(X, pts, restricted_params, restricted_z, inv_C_d, inv_C_e, last_itn, do_split)
+        
         # Calculate the three fractions that compose the proposal 
         # distribution to split or merge (C.f Jain & Neal 2004)
-        # the factorials could get hairy numerically, so 
-        # calculate in log-space              
-        if C_d == C_e:
+        # factorials get hairy numerically, calculating in log-space (h/t hannawallach)             
+        if do_split:
             # split: acc(c^split,c) = min(1,[1]*[2]*[3])
             # [1] q(C | C_split) / q(C_split | C)
-            # q_1 = 1.0 / (0.5)**(len(inv_C_d) + len(inv_C_e) -2)
-            log_q1 = -(len(inv_C_d) + len(inv_C_e) -2)*log(0.5)
+            # q_1 = 1.0 / product_{i \in pts} of P(C_i | C_{-i}, X_i)
+            log_q1 = -1.0*log_probs
 
             # [2] P(C_split) | P(C)
             # q_2 =  (self.alpha * (|C_d| - 1)!*(|C_e - 1)!) / (|C| - 1)!
             log_q2 = log(self.alpha) + gammaln(len(inv_C_d) - 1)\
-                + gammaln(len(inv_C_e) -1) - gammaln(len(pts) - 1)
+                + gammaln(len(inv_C_e) -1) - gammaln(len(self.inv_z[C_d]) - 1)
 
             # [3] L(C_d | X_d) * L(C_e | X_e) / L(C | X)
-            # restricted_params[C_d].pdf() * restricted_params[C_e].pdf() / self.params[self.z[C_d]].pdf()
-            # TODO: syntax error to fix 
-            loq_q3 = log(restricted_params[C_d].pdf(X[list(inv_C_d)])) + log(restricted_params[C_e].pdf(X[list(inv_C_e)]))) \
-                - log(self.params[self.z[C_d]].pdf(X[list(self.inv_z[C_d])]))
+            # restricted_params[C_d].likelihood() * restricted_params[C_e].likelihood() / self.params[self.z[C_d]].likelihood()
+            seterr(divide='ignore')
+            log_q3 = log(restricted_params[C_d].likelihood(X[list(inv_C_d)])) + log(restricted_params[C_e].likelihood(X[list(inv_C_e)])) \
+                - log(self.params[C_d].likelihood(X[list(self.inv_z[C_d])]))
+            seterr(divide='warn')
             acc = log_q1 + log_q2 + log_q3
+            
 
             if log(uniform()) < min(0.0, acc):
                 # split is accepted. 
-                # make sure we aren't leaking points
+                # sanity check: make sure all points are accounted for
                 assert(self.params[C_d].n_points == restricted_params[C_d].n_points + restricted_params[C_e].n_points)
-                # remove the original component C_d
-                self.params.pop(C_d)
-                # add the two split components
+                # the two split components to the model
+                self.params[C_d] = restricted_params[C_d]
                 self.params[C_e] = restricted_params[C_e]
-                new_key = max(self.params.keys()) + 1
-                self.params[new_key] = restricted_params[C_d]
-                # update component assignments for pts in new component
-                self.z[list(inv_C_d)] = new_key
-                self.z[list(inv_C_e)] = C_e
+                # update component assignments for pts split amongst both components
+                self.z.update(dict.fromkeys(list(inv_C_d), C_d))
+                self.z.update(dict.fromkeys(list(inv_C_e), C_e))
                 # update self.inv_z for the new components 
-                self.inv_z[new_key] = inv_C_d
+                self.inv_z[C_d] = inv_C_d
                 self.inv_z[C_e] = inv_C_e
                 self.n_components += 1
-                # sanity checks
-                assert(len(pts) + 2 == self.params[new_key].n_points + self.params[C_e].n_points)
+                # sanity check: we don't split any atoms
                 assert(self.n_components <= self.n_points)
 
         else:
@@ -202,33 +202,36 @@ class DPMM:
             merged_component = Gaussian(X[list(merged_pts)])
 
             # [1] q(C | C_merge) / q(C_merge | C)
-            # q_1 = (0.5)**(len(inv_C_d) + len(inv_C_e) -2)
-            log_q1 = (len(inv_C_d) + len(inv_C_e) -2)*log(0.5)
+            # q_1 = product_{i \in pts} of P(C_i | C_{-i}, X_i) / 1.0
+            log_q1 = log_probs
 
             # [2] P(C_merge) | P(C)
             # q_2 = (|C_merge| - 1)! / (|C_d| - 1)!*(|C_e - 1)!) * (self.alpha)
             log_q2 = gammaln(len(merged_pts) - 1) - log(self.alpha)\
-                - gammaln(len(inv_C_e) -1) - gammaln(len(inv_C_d) - 1)
+                - gammaln(len(self.inv_z[C_e]) -1) - gammaln(len(self.inv_z[C_d]) - 1)
 
             # [3] L(C^{merged} | X) / L(C_d | X_d) * L(C_e | X_e) 
-            # merged_component.pdf() / restricted_params[C_d].pdf() * restricted_params[C_e].pdf()
-            loq_q3 = log(self.params[self.z[C_d]].pdf(X[list(merged_pts)]))) \
-                - log(restricted_params[C_d].pdf(X[list(inv_C_d)])) - log(restricted_params[C_e].pdf(X[list(inv_C_e)]))) \
-                 
+            # q_3 = merged_component.likelihood() / self.params[C_d].likelihood(pts in C_d) * self.params[C_e].likelihood(pts in C_e)
+            seterr(divide='ignore')
+            log_q3 = log(merged_component.likelihood(X[list(merged_pts)])) \
+                - log(self.params[C_d].likelihood(X[list(self.inv_z[C_d])])) - log(self.params[C_e].likelihood(X[list(self.inv_z[C_e])]))
+            seterr(divide='warn')     
             acc = log_q1 + log_q2 + log_q3
 
             if log(uniform()) < min(0.0, acc):
-                # merge is accepted, add to the model
+                # merge is accepted
+                # sanity check: 
+                assert(merged_component.n_points == self.params[C_d].n_points + self.params[C_e].n_points)
                 self.params[C_d] = merged_component
-                self.z[list(merged_pts)] = C_d
+                self.z.update(dict.fromkeys(list(merged_pts), C_d))
                 self.inv_z[C_d] = merged_pts
-                # remove the original component C_e
+                # remove component C_e from the model
                 self.params.pop(C_e)
+                self.inv_z.pop(C_e)
                 self.n_components -= 1
-                # sanity checks
+                # sanity check: we always have at least one component
                 assert(self.n_components > 0)
-                
-                
+                            
 
 
     def restricted_gibbs_pass(self, X, pts, restricted_params, restricted_z, pts_in_d, pts_in_e, last_itn, do_split):
@@ -239,12 +242,14 @@ class DPMM:
         restricted_z: {pt in X: component responsible}      
         pts_in_d: {component: set of pts in X}
         pts_in_e: {component: set of pts in X}
-        last_itn: boolean.  If true, assign the last data point deterministically.
+        last_itn: boolean.  If true, assign the last data point deterministically,
+        so we can calculate q(C^{split} | C) or q(C | C^{merge}) correctly.
         do_split: boolean.  True if C_d == C_e
         """
 
         # Go through all points in the restricted set S
         indices = list(pts)
+        log_probs = 0.0
         for i in np.random.permutation(indices):
             # remove S[i]'s sufficient statistics from restricted_z[i]
             restricted_params[restricted_z[i]].rm_point(X[i])
@@ -273,16 +278,18 @@ class DPMM:
                 k = sample(tmp)
 
             # add X[i]'s sufficient statistics to cluster z[i]
-
             if k == 0:
                 pts_in_d.add(i)
             else:
                 pts_in_e.add(i)
             restricted_z[i] = restricted_params.keys()[k]
-            restricted_params[restricted_z[i]].add_point(X[i]) 
+            restricted_params[restricted_z[i]].add_point(X[i])
+            
+            if last_itn:
+                log_probs += np.log(tmp[k])
 
-        # P(z[i] = k), part of acc in the final iteration
-        return tmp[k]
+        # return log_probs for calculation of [1] in split-merge iteration
+        return log_probs
 
 
     def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False, max_iter=100):
@@ -322,7 +329,7 @@ class DPMM:
         self._X = X
 
         if self.n_components == -1:
-            # initialize with 1 cluster for each datapoint
+            # initialize with 1 component for each datapoint
             self.params = dict([(i, Gaussian(X=np.matrix(X[i]), mu_0=mean_data)) for i in xrange(X.shape[0])])
             self.z = dict([(i,i) for i in range(X.shape[0])])
             self.n_components = X.shape[0]
@@ -336,27 +343,34 @@ class DPMM:
             mbk.fit(X)
             labels_from_kmeans = mbk.labels_  
             means_from_kmeans = mbk.cluster_centers_ 
-            self.params = dict([(j, Gaussian(X=np.zeros((0, X.shape[1])), mu_0=m.reshape(mean_data.shape))) for j,m in enumerate(means_from_kmeans)])
+            self.params = {}
             self.z = dict([(i, l) for i,l in enumerate(labels_from_kmeans)])
+            for l in np.unique(labels_from_kmeans):
+                component = Gaussian(X=np.zeros((0, X.shape[1])))
+                data = X[labels_from_kmeans == l]
+                component.fit(data)
+                self.params[l] = component
             previous_means = (1.0 + 5*epsilon) * self._get_means()
             previous_components = self.n_components
-            for i in xrange(X.shape[0]):
-                self.params[self.z[i]].add_point(X[i])
         else:
-            # init randomly among self.n_component component labels
-            self.params = dict([(j, Gaussian(X=np.zeros((0, X.shape[1])), mu_0=mean_data)) for j in xrange(self.n_components)])
-            self.z = dict([(i, random.randint(0, self.n_components - 1)) 
-                           for i in range(X.shape[0])])
+            # every point in the same component
+            self.params[0] = Gaussian(X=np.zeros((0, X.shape[1])), mu_0=mean_data)
+            self.params[0].fit(X)
+            self.z = dict([(i, 0) for i in range(X.shape[0])])
             previous_means = (1.0 + 5*epsilon) * self._get_means()
-            previous_components = self.n_components
-            for i in xrange(X.shape[0]):
-                self.params[self.z[i]].add_point(X[i])                
+            previous_components = 1               
 
         # initialize the components to points dict
         self.inv_z = defaultdict(set)
         for pt in xrange(X.shape[0]):
             self.inv_z[self.z[pt]].add(pt)
-
+        
+        # Debug: make sure all inv_z are disjoint sets
+        for i in self.inv_z.keys():
+            for j in self.inv_z.keys():
+                if i == j: continue
+                assert(len(self.inv_z[i] & self.inv_z[j]) == 0)
+            
         print "Initialized collapsed Gibbs sampling with %i clusters" % (self.n_components)
         return previous_means, previous_components
 
@@ -366,13 +380,14 @@ class DPMM:
         # randomize the order of points for the scan
         indices = [i for i in xrange(X.shape[0])]
         for i in np.random.permutation(indices):
-            # remove X[i]'s sufficient statistics from z[i]
+            # remove X[i]'s sufficient statistics from z[i], disassociate X[i] from z[i]
             self.params[self.z[i]].rm_point(X[i])
+            self.inv_z[self.z[i]].remove(i)
             # if it empties the cluster, remove it and decrease K
             if self.params[self.z[i]].n_points <= 0:
                 self.params.pop(self.z[i])
                 self.n_components -= 1
-
+                
             tmp = []
             for k, param in self.params.iteritems():
                 # compute P_k(X[i]) = P(X[i] | X[-i] = k)
@@ -394,22 +409,20 @@ class DPMM:
             tmp /= tmp.sum()
 
             # sample z[i] ~ P(z[i])
-            # TODO: replace with k = kale.math_utils.sample(tmp)
-            rdm = np.random.rand()
-            total = tmp[0]
-            k = 0
-            while (rdm > total):
-                k += 1
-                total += tmp[k]
+            k = sample(tmp)
+        
             # add X[i]'s sufficient statistics to cluster z[i]
             if k == self.n_components: # create a new cluster
                 new_key = max(self.params.keys()) + 1
                 self.z[i] = new_key
                 self.n_components += 1
-                self.params[new_key] = Gaussian(X=np.matrix(X[i]))
+                self.params[new_key] = Gaussian(X=np.zeros((0, X.shape[1])))
+                self.params[new_key].add_point(X[i])
+                self.inv_z[new_key].add(i)
             else:
                 self.z[i] = self.params.keys()[k]
                 self.params[self.params.keys()[k]].add_point(X[i])
+                self.inv_z[self.params.keys()[k]].add(i)
             assert(k < self.n_components)
 
 

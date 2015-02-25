@@ -122,6 +122,23 @@ class Gaussian:
         self.recompute_ss()
 
 
+    def likelihood(self, X):
+        """ Evaluate the likelihood of a set of points X
+        computing with the """
+        nrow,ncol = X.shape
+        assert(ncol == self.mean.shape[1])
+        assert(nrow > 1)
+        probs = []
+        for pt in X:
+            probs.append(self.pdf(pt))
+        probs = np.array(probs)
+        ### TODO: getting underflow here.  I should try kale.math_utils.log_sum_exp() 
+        ### or http://www.iro.umontreal.ca/~memisevr/teaching/mlvis2013/code/logsumexp.py
+        ### or https://gist.github.com/mblondel/364369
+        ### or http://docs.scipy.org/doc/numpy/reference/generated/numpy.logaddexp.html
+        ### or http://blog.smola.org/post/987977550/log-probabilities-semirings-and-floating-point
+        return np.exp(np.log(probs).sum())
+    
     def pdf(self, x):
         """ probability density function for a multivariate Gaussian """
         size = len(x)
