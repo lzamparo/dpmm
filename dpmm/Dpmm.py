@@ -167,14 +167,14 @@ class DPMM:
 
             # [2] P(C_split) | P(C)
             # q_2 =  (self.alpha * (|C_d| - 1)!*(|C_e - 1)!) / (|C| - 1)!
-            log_q2 = log(self.alpha) + gammaln(len(inv_C_d) - 1)\
-                + gammaln(len(inv_C_e) -1) - gammaln(len(self.inv_z[C_d]) - 1)
+            log_q2 = log(self.alpha) + gammaln(len(inv_C_d))\
+                + gammaln(len(inv_C_e)) - gammaln(len(self.inv_z[C_d]))
 
             # [3] L(C_d | X_d) * L(C_e | X_e) / L(C | X)
             # restricted_params[C_d].likelihood() * restricted_params[C_e].likelihood() / self.params[self.z[C_d]].likelihood()
             seterr(divide='ignore')
-            log_q3 = log(restricted_params[C_d].likelihood(X[list(inv_C_d)])) + log(restricted_params[C_e].likelihood(X[list(inv_C_e)])) \
-                - log(self.params[C_d].likelihood(X[list(self.inv_z[C_d])]))
+            log_q3 = restricted_params[C_d].log_likelihood(X[list(inv_C_d)]) + restricted_params[C_e].log_likelihood(X[list(inv_C_e)]) \
+                - self.params[C_d].log_likelihood(X[list(self.inv_z[C_d])])
             seterr(divide='warn')
             acc = log_q1 + log_q2 + log_q3
             
@@ -207,14 +207,14 @@ class DPMM:
 
             # [2] P(C_merge) | P(C)
             # q_2 = (|C_merge| - 1)! / (|C_d| - 1)!*(|C_e - 1)!) * (self.alpha)
-            log_q2 = gammaln(len(merged_pts) - 1) - log(self.alpha)\
-                - gammaln(len(self.inv_z[C_e]) -1) - gammaln(len(self.inv_z[C_d]) - 1)
+            log_q2 = gammaln(len(merged_pts)) - log(self.alpha)\
+                - gammaln(len(self.inv_z[C_e])) - gammaln(len(self.inv_z[C_d]))
 
             # [3] L(C^{merged} | X) / L(C_d | X_d) * L(C_e | X_e) 
             # q_3 = merged_component.likelihood() / self.params[C_d].likelihood(pts in C_d) * self.params[C_e].likelihood(pts in C_e)
             seterr(divide='ignore')
-            log_q3 = log(merged_component.likelihood(X[list(merged_pts)])) \
-                - log(self.params[C_d].likelihood(X[list(self.inv_z[C_d])])) - log(self.params[C_e].likelihood(X[list(self.inv_z[C_e])]))
+            log_q3 = merged_component.log_likelihood(X[list(merged_pts)]) \
+                - self.params[C_d].log_likelihood(X[list(self.inv_z[C_d])]) - self.params[C_e].log_likelihood(X[list(self.inv_z[C_e])])
             seterr(divide='warn')     
             acc = log_q1 + log_q2 + log_q3
 
@@ -605,9 +605,9 @@ if __name__ == "__main__":
         # -1 means that we initialize with 1 cluster per point
         pre_alpha = 1.0
         n_components = pre_alpha * np.log(X.shape[0])
-        dpmm = DPMM(n_components=n_components.astype(int),alpha=pre_alpha,do_sample_alpha=True) # -1, 1, 2, 5
+        dpmm = DPMM(n_components=-1,alpha=pre_alpha,do_sample_alpha=True) # -1, 1, 2, 5
         dpmm.fit_conjugate_split_merge(X, do_sample_alpha=True, 
-                                       do_kmeans=True, 
+                                       do_kmeans=False, 
                                        max_iter=max_iter)
         #dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True,max_iter=max_iter)
 

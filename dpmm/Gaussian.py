@@ -122,12 +122,12 @@ class Gaussian:
         self.recompute_ss()
 
 
-    def likelihood(self, X):
+    def log_likelihood(self, X):
         """ Evaluate the likelihood of a set of points X
         computing with the """
         nrow,ncol = X.shape
         assert(ncol == self.mean.shape[1])
-        assert(nrow > 1)
+        assert(nrow > 0)
         probs = []
         for pt in X:
             probs.append(self.pdf(pt))
@@ -137,7 +137,7 @@ class Gaussian:
         ### or https://gist.github.com/mblondel/364369
         ### or http://docs.scipy.org/doc/numpy/reference/generated/numpy.logaddexp.html
         ### or http://blog.smola.org/post/987977550/log-probabilities-semirings-and-floating-point
-        return np.exp(np.log(probs).sum())
+        return np.log(probs).sum()
     
     def pdf(self, x):
         """ probability density function for a multivariate Gaussian """
