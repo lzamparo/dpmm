@@ -14,7 +14,7 @@ p = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 p.add_argument('algorithm', metavar='<inference-algorithm>',
                 choices=['gibbs','split_merge'],
                 help='inference algorithm to test')
-p.add_argument('-i', metavar='<inputfile>', default='/scratch/z/zhaolei/lzamparo/sm_rep1_data/reference_samples/ref_pops_topmodel_10.h5',
+p.add_argument('-i', metavar='<inputfile>', default='/scratch/z/zhaolei/lzamparo/sm_rep1_data/reference_samples/ref_pops_topmodel_20.h5',
                help='input hdf5 file containing the data')
 p.add_argument('-a', metavar='array', default='/reduced_samples/reference_double_sized_seed_54321/reference_pop',
                help='path to data node within the input file')
@@ -41,6 +41,11 @@ finally:
 # initialize DPMM
 pre_alpha = 0.5
 n_components = pre_alpha * np.log(X.shape[0])
+
+# dump args to stdout
+for arg in vars(args):
+        print arg, ": ", getattr(args, arg)
+
 if args.algorithm == 'gibbs':
         dpmm = DPMM(n_components=n_components.astype(int),alpha=pre_alpha,do_sample_alpha=True)
         dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True,max_iter=args.num_itns)
