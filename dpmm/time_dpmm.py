@@ -38,18 +38,15 @@ except:
 finally:
         h5file.close()
 
+# initialize DPMM
+pre_alpha = 0.5
+n_components = pre_alpha * np.log(X.shape[0])
 if args.algorithm == 'gibbs':
         dpmm = DPMM(n_components=n_components.astype(int),alpha=pre_alpha,do_sample_alpha=True)
         dpmm.fit_collapsed_Gibbs(X,do_sample_alpha=True,do_kmeans=True,max_iter=args.num_itns)
 elif args.algorithm == 'split_merge':
         dpmm = DPMM(n_components=-1,alpha=pre_alpha,do_sample_alpha=True)
         dpmm.fit_conjugate_split_merge(X,do_sample_alpha=True,do_kmeans=False,max_iter=args.num_itns)
-
-# initialize DPMM
-pre_alpha = 0.5
-n_components = pre_alpha * np.log(X.shape[0])
-
-
 
 # save the dpmm to outfile
 pickle.dump(dpmm, open( args.save, "wb" ) )
