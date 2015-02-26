@@ -14,7 +14,7 @@ p = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 p.add_argument('algorithm', metavar='<inference-algorithm>',
                 choices=['gibbs','split_merge'],
                 help='inference algorithm to test')
-p.add_argument('-i', metavar='<inputfile>', default='/scratch/z/zhaolei/lzamparo/sm_rep1_data/reference_samples/ref_pops_topmodel_20.h5',
+p.add_argument('-i', metavar='<inputfile>', default='/scratch/z/zhaolei/lzamparo/sm_rep1_data/reference_samples/ref_pops_topmodel_10.h5',
                help='input hdf5 file containing the data')
 p.add_argument('-a', metavar='array', default='/reduced_samples/reference_double_sized_seed_54321/reference_pop',
                help='path to data node within the input file')
