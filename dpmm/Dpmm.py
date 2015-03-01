@@ -275,7 +275,7 @@ class DPMM:
             if last_itn and do_split:
                 k = 0 if restricted_z[i] == restricted_params.keys()[0] else 1
             else:
-                k = sample(tmp)
+                [k] = sample(tmp)
 
             # add X[i]'s sufficient statistics to cluster z[i]
             if k == 0:
@@ -409,7 +409,7 @@ class DPMM:
             tmp /= tmp.sum()
 
             # sample z[i] ~ P(z[i])
-            k = sample(tmp)
+            [k] = sample(tmp)
         
             # add X[i]'s sufficient statistics to cluster z[i]
             if k == self.n_components: # create a new cluster
