@@ -81,17 +81,18 @@ class DPMM:
         pi_x = (a + k - 1.0) / (a + k - 1.0 + n * (b - np.log(x)))
         return pi_x*(np.random.gamma(a + k, b - np.log(x))) + (1 - pi_x)*(np.random.gamma(a + k - 1.0, b - np.log(x)))
 
-    def fit_conjugate_split_merge(self,X, do_sample_alpha=False, do_kmeans=False, max_iter=100):
+    def fit_conjugate_split_merge(self,X, do_sample_alpha=False, do_kmeans=False, max_iter=100,do_init=True):
         """ according to algorithm of Jain & Neal 2004 """        
 
-        previous_means, previous_components = self.initialize_model(X,do_kmeans)
+        if do_init:
+            previous_means, previous_components = self.initialize_model(X,do_kmeans)
 
         n_iter = 0 # with max_iter hard limit, in case of cluster oscillations
         # while the clusters did not converge (i.e. the number of components or
         # the means of the components changed) and we still have iter credit 
+        converged = False
         while (n_iter < max_iter 
-               and (previous_components != self.n_components
-                    or abs((previous_means - self._get_means()).sum()) > epsilon)):
+               and not converged):
             previous_means = self._get_means()
             previous_components = self.n_components 
             for _ in xrange(3):
@@ -104,7 +105,8 @@ class DPMM:
                 self.alpha = new_alpha                
             n_iter += 1
             print "still sampling, %i clusters currently, with log-likelihood %f, alpha %f" % (self.n_components, self.log_likelihood(), self.alpha)
-
+            converged = (previous_components == self.n_components
+                                and abs((previous_means - self._get_means()).sum()) < epsilon)            
         self.means_ = self._get_means()
 
     def split_merge_iteration(self, X, inner_itns=6):
@@ -292,18 +294,19 @@ class DPMM:
         return log_probs
 
 
-    def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False, max_iter=100):
+    def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False, max_iter=100,do_init=True):
         """ according to algorithm 3 of collapsed Gibbs sampling in Neal 2000:
         http://www.stat.purdue.edu/~rdutta/24.PDF """
 
-        previous_means, previous_components = self.initialize_model(X,do_kmeans)
+        if do_init:
+            previous_means, previous_components = self.initialize_model(X,do_kmeans)
 
         n_iter = 0 # with max_iter hard limit, in case of cluster oscillations
         # while the clusters did not converge (i.e. the number of components or
         # the means of the components changed) and we still have iter credit 
+        converged = False
         while (n_iter < max_iter 
-               and (previous_components != self.n_components
-                    or abs((previous_means - self._get_means()).sum()) > epsilon)):
+               and not converged):
             previous_means = self._get_means()
             previous_components = self.n_components 
             with timeit():
@@ -314,7 +317,8 @@ class DPMM:
                     self.alpha = new_alpha                
             n_iter += 1
             print "still sampling, %i clusters currently, with log-likelihood %f, alpha %f" % (self.n_components, self.log_likelihood(), self.alpha)
-
+            converged = (previous_components == self.n_components
+                                and abs((previous_means - self._get_means()).sum()) < epsilon)            
         self.means_ = self._get_means() 
 
     def initialize_model(self, X, do_kmeans=False):
