@@ -52,7 +52,7 @@ try:
         dpmm = pickle.load(open(args.loadfile, mode='rb'))
 except:
         e = sys.exc_info()[0]
-        print "Couldn't load a model from " % (args.loadfile)
+        print "Couldn't load a model from %s " % (args.loadfile)
         print e
         sys.exit()
         
