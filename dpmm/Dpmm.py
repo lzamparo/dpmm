@@ -339,7 +339,27 @@ class DPMM:
             self.n_components = X.shape[0]
             previous_means = (1.0 + 5*epsilon) * self._get_means()
             previous_components = self.n_components
-        elif self.n_components != -1 and do_kmeans:
+            
+        elif self.n_components > 1 and not do_kmeans:    
+            # initialize by randomly assigning the points across the n_components
+            # to do this in a kind of lazy way, re-use the MBK code but with 1 iteration.
+            batch_size = (np.floor(X.shape[0] / 10.0)).astype(int)
+            mbk = MiniBatchKMeans(init='k-means++', n_clusters=self.n_components, batch_size=batch_size,
+                                  n_init=10, max_iter=1, verbose=0)
+            mbk.fit(X)
+            labels_from_kmeans = mbk.labels_  
+            means_from_kmeans = mbk.cluster_centers_ 
+            self.params = {}
+            self.z = dict([(i, l) for i,l in enumerate(labels_from_kmeans)])
+            for l in np.unique(labels_from_kmeans):
+                component = Gaussian(X=np.zeros((0, X.shape[1])))
+                data = X[labels_from_kmeans == l]
+                component.fit(data)
+                self.params[l] = component
+            previous_means = (1.0 + 5*epsilon) * self._get_means()
+            previous_components = self.n_components            
+            
+        elif self.n_components > 1 and do_kmeans:
             # init with k-means
             batch_size = (np.floor(X.shape[0] / 10.0)).astype(int)
             mbk = MiniBatchKMeans(init='k-means++', n_clusters=self.n_components, batch_size=batch_size,
