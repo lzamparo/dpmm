@@ -7,8 +7,8 @@ from kale.math_utils import sample
 
 def generate_data(V, D, l, alpha, beta):
     """
-    Generates a synthetic corpus of documents from a Dirichlet process
-    mixture model with multinomial mixture components (topics). The
+    Generates a synthetic corpus of data points from a Dirichlet process
+    mixture model with Gaussian mixture components. The
     mixture components are drawn from a symmetric Dirichlet prior.
 
     Arguments:
@@ -28,7 +28,7 @@ def generate_data(V, D, l, alpha, beta):
 
     for d in xrange(D):
 
-        # draw a topic assignment for this document
+        # draw a cluster assignment for this document
 
         dist = bincount(z_D).astype(float)
         dist[0] = alpha
@@ -36,12 +36,12 @@ def generate_data(V, D, l, alpha, beta):
         t = len(dist) if t == 0 else t
         z_D[d] = t
 
-        # if it's a new topic, draw the parameters for that topic
+        # if it's a new cluster, draw the parameters for that component
 
         if t == len(dist):
             phi_TV[t - 1, :] = dirichlet(beta * ones(V) / V)
 
-        # draw the tokens from the topic
+        # draw a sample from the component
 
         for v in sample(phi_TV[t - 1, :], num_samples=poisson(l)):
             N_DV[d, v] += 1

@@ -152,4 +152,7 @@ class Gaussian:
         inv = self.covar.I        
         result = math.pow(math.e, -0.5 * (x_mu * inv * x_mu.transpose()))
         return norm_const * result
-
+    
+    def sample(self):
+        """ return a sample from this Gaussian """
+        

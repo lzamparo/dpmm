@@ -15,7 +15,7 @@ def extract_data(line_regex,chain_regex,filename):
         if line.startswith('save'):
             line = line.strip()
             parts = line.split('/')
-            match = chain_regex.match(parts[-1])
+            match = chain_regex.search(parts[-1])
             layer, chain = match.groups()
         elif line.startswith('still'):
             match = line_regex.match(line.strip())
@@ -32,9 +32,11 @@ input_dir = '/data/bnpy/output/gibbs_traces'
 # Store the contents of each file as a DataFrame, store in this list to merge later
 data_files = []
 
+# save :  /scratch/z/zhaolei/lzamparo/sm_rep1_data/dpmm_gibbs_pklfiles/short_gibbs_3layer_chain_1.pkl
+
 # compile a regex to extract the number of components on from this step
 get_clusters = re.compile("still sampling, ([\d_]+) clusters")
-get_model_and_chain = re.compile("gibbs\_(\d)layer\_chain\_([\d]+).pkl")
+get_model_and_chain = re.compile("[\w+]?[\_]?gibbs\_(\d)layer\_chain\_([\d]+).pkl")
 
 print "...Processing files"
 o_files = os.listdir(input_dir)
@@ -42,6 +44,8 @@ o_files = os.listdir(input_dir)
 # for each file: 
 for o_file in o_files:
     # read a list of all files in the directory that match model output files
+    if not o_file.startswith('collapsed'):
+        continue
     trace_file = open(os.path.join(input_dir,o_file),'r')
     chain, layer, k_vals, iters = extract_data(get_clusters,get_model_and_chain,trace_file)
     trace_file.close()
