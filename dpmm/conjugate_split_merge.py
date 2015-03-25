@@ -17,7 +17,7 @@ def iteration(V, D, N_DV, N_D, alpha, beta, z_D, inv_z_T, active_topics, inactiv
     N_DV:    the data
     N_D:     sum along data features (N_DV.sum(1))
     alpha:   concentration param for DP prior
-    beta:    prior on ?
+    beta:    prior on symmetric Dirichlet distribution for multi-nomial observation distributions
     z_D:     indicators for each data point
     inv_z_T: indicates which data points are associated with which components
     active_topics: active mixture components

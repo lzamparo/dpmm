@@ -55,6 +55,9 @@ class DPMM:
 
     def _get_covars(self):
         return np.array([g.covar for g in self.params.itervalues()])
+    
+    def _get_assignments(self):
+        return [self.z[i] for i in xrange(self.n_points)]
 
 
     def __init__(self, n_components=-1, alpha=1.0, do_sample_alpha=False, a=2.0, b=2.0):
@@ -62,6 +65,7 @@ class DPMM:
         self.n_components = n_components
         self.means_ = self._get_means()
         self.alpha = alpha
+        self.do_sample_alpha = do_sample_alpha
         if do_sample_alpha:
             self.alpha_hyperpriors = (a,b)
             self.alpha_samples = []
@@ -81,7 +85,7 @@ class DPMM:
         pi_x = (a + k - 1.0) / (a + k - 1.0 + n * (b - np.log(x)))
         return pi_x*(np.random.gamma(a + k, b - np.log(x))) + (1 - pi_x)*(np.random.gamma(a + k - 1.0, b - np.log(x)))
 
-    def fit_conjugate_split_merge(self,X, do_sample_alpha=False, do_kmeans=False, max_iter=100,do_init=True):
+    def fit_conjugate_split_merge(self,X, do_kmeans=False, max_iter=100,do_init=True):
         """ according to algorithm of Jain & Neal 2004 """        
 
         if do_init:
@@ -99,7 +103,7 @@ class DPMM:
                 with timeit():
                     self.split_merge_iteration(X)
             self.gibbs_iteration(X)  
-            if do_sample_alpha:
+            if self.do_sample_alpha:
                 new_alpha = self.sample_alpha()
                 self.alpha_samples.append(self.alpha)
                 self.alpha = new_alpha                
@@ -294,7 +298,7 @@ class DPMM:
         return log_probs
 
 
-    def fit_collapsed_Gibbs(self, X, do_sample_alpha=False, do_kmeans=False, max_iter=100,do_init=True):
+    def fit_collapsed_Gibbs(self, X, do_kmeans=False, max_iter=100,do_init=True):
         """ according to algorithm 3 of collapsed Gibbs sampling in Neal 2000:
         http://www.stat.purdue.edu/~rdutta/24.PDF """
 
@@ -311,7 +315,7 @@ class DPMM:
             previous_components = self.n_components 
             with timeit():
                 self.gibbs_iteration(X)
-                if do_sample_alpha:
+                if self.do_sample_alpha:
                     new_alpha = self.sample_alpha()
                     self.alpha_samples.append(self.alpha)
                     self.alpha = new_alpha                
@@ -395,7 +399,7 @@ class DPMM:
                 if i == j: continue
                 assert(len(self.inv_z[i] & self.inv_z[j]) == 0)
             
-        print "Initialized collapsed Gibbs sampling with %i clusters" % (self.n_components)
+        print "Initialized DPMM with %i clusters" % (self.n_components)
         return previous_means, previous_components
 
     def gibbs_iteration(self, X):

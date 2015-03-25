@@ -1,6 +1,12 @@
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from numpy import array, empty_like, unique, zeros
-from numpy.random import poisson, seed
+from numpy.random import seed
+
+#import matplotlib as mpl
+#mpl.use('pdf') # needed so that you can plot in a batch job with no X server (undefined $DISPLAY) problems
+
+import numpy as np
+from Dpmm import DPMM
 
 from generative_process import generate_data
 from kale.iterview import iterview
@@ -8,7 +14,7 @@ from kale.math_utils import sample
 from pp_plot import pp_plot
 
 
-def getting_it_right(algorithm, V, D, l, alpha, beta, num_itns, s):
+def getting_it_right(algorithm, V, D, alpha, num_itns, s):
     """
     Runs Geweke's "getting it right" test.
     """
@@ -16,50 +22,30 @@ def getting_it_right(algorithm, V, D, l, alpha, beta, num_itns, s):
     seed(s)
 
     # generate forward samples via the generative process
-
     print 'Generating forward samples...'
 
     forward_samples = []
 
     for _ in iterview(xrange(num_itns)):
-        forward_samples.append(generate_data(V, D, l, alpha, beta)[1:])
+        forward_samples.append(generate_data(V, D, alpha)[1:])
 
     # generate reverse samples via the inference algorithm
-
     print 'Generating reverse samples...'
 
     reverse_samples = []
-
-    phi_TV, z_D, _ = generate_data(V, D, l, alpha, beta)
+    phi_TV, z_D, data = generate_data(V, D, alpha)
 
     for _ in iterview(xrange(num_itns)):
 
-        N_DV = zeros((D, V), dtype=int)
+        N_DV = data
 
-        if (algorithm.__name__ == 'algorithm_8' or
-            algorithm.__name__ == 'nonconjugate_split_merge'):
-            for d in xrange(D):
-                for v in sample(phi_TV[z_D[d], :], num_samples=poisson(l)):
-                    N_DV[d, v] += 1
+        T = D # maximum number of topics
+        n_components = alpha * np.log(data.shape[0])
 
-            phi_TV, z_D = algorithm.inference(N_DV, alpha, beta, z_D, 1)
+        dpmm = DPMM(n_components=n_components.astype(int),alpha=alpha,do_sample_alpha=False)
+        dpmm.fit_collapsed_Gibbs(data,do_kmeans=False,max_iter=100,do_init=True)        
 
-        else:
-
-            T = D # maximum number of topics
-
-            N_TV = zeros((T, V), dtype=int)
-            N_T = zeros(T, dtype=int)
-
-            for d in xrange(D):
-                t = z_D[d]
-                for _ in xrange(poisson(l)):
-                    [v] = sample((N_TV[t, :] + beta / V) / (N_T[t] + beta))
-                    N_DV[d, v] += 1
-                    N_TV[t, v] += 1
-                    N_T[t] += 1
-
-            z_D = algorithm.inference(N_DV, alpha, beta, z_D, 1)
+        z_D = dpmm._get_assignments()
 
         z_D_copy = empty_like(z_D)
         z_D_copy[:] = z_D
@@ -106,58 +92,43 @@ def getting_it_right(algorithm, V, D, l, alpha, beta, num_itns, s):
         reverse_std_topic_size.append(topic_sizes.std())
 
     # generate P-P plots
-
-    pp_plot(array(forward_num_topics), array(reverse_num_topics))
-    pp_plot(array(forward_max_topic_size), array(reverse_max_topic_size))
-    pp_plot(array(forward_mean_topic_size), array(reverse_mean_topic_size))
-    pp_plot(array(forward_std_topic_size), array(reverse_std_topic_size))
+    cluster_title, cluster_file = "PP plot: number of clusters", "num_clusters_" + str(D) + "_pts_" + str(num_itns) + "_itns.pdf"
+    pp_plot(array(forward_num_topics), array(reverse_num_topics), savefile=cluster_file, plot_title=cluster_title)
+    cluster_max_size_title, cluster_max_size_file = "PP plot: max cluster size", "max_cluster_size_" + str(D) + "_pts_" + str(num_itns) + "_itns.pdf"
+    pp_plot(array(forward_max_topic_size), array(reverse_max_topic_size), savefile=cluster_max_size_file, plot_title=cluster_max_size_title)
+    cluster_mean_size_title, cluster_mean_size_file = "PP plot: mean cluster size", "mean_cluster_size_" + str(D) + "_pts_" + str(num_itns) + "_itns.pdf"
+    pp_plot(array(forward_mean_topic_size), array(reverse_mean_topic_size), savefile=cluster_mean_size_file, plot_title=cluster_mean_size_title)
+    cluster_min_size_title, cluster_min_size_file = "PP plot: min cluster size", "min_cluster_size_" + str(D) + "_pts_" + str(num_itns) + "_itns.pdf"
+    pp_plot(array(forward_std_topic_size), array(reverse_std_topic_size), savefile=cluster_min_size_file, plot_title=cluster_min_size_title)
 
 
 def main():
 
-    import algorithm_3
-    import algorithm_8
-    import conjugate_split_merge
-    import nonconjugate_split_merge
-
-    functions = {
-        'algorithm_3': algorithm_3,
-        'algorithm_8': algorithm_8,
-        'conjugate_split_merge': conjugate_split_merge,
-        'nonconjugate_split_merge': nonconjugate_split_merge
-        }
+    from Dpmm import DPMM
 
     p = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 
     p.add_argument('algorithm', metavar='<inference-algorithm>',
-                   choices=['algorithm_3',
-                            'algorithm_8',
-                            'conjugate_split_merge',
-                            'nonconjugate_split_merge'],
+                   choices=['collapsed_gibbs',
+                            'conjugate_split_merge'], default='collapsed_gibbs',
                    help='inference algorithm to test')
-    p.add_argument('-V', type=int, metavar='<vocab-size>', default=3,
-                   help='vocabulary size')
-    p.add_argument('-D', type=int, metavar='<num-docs>', default=10,
-                   help='number of documents')
-    p.add_argument('-l', type=int, metavar='<avg-doc-length>', default=10,
-                   help='average document length')
+    p.add_argument('-V', type=int, metavar='<num-components>', default=2,
+                   help='number of components')
+    p.add_argument('-D', type=int, metavar='<data-pts>', default=1000,
+                   help='number of data points')
     p.add_argument('--alpha', type=float, metavar='<alpha>', default=1.0,
                    help='concentration parameter for the DP')
-    p.add_argument('--beta', type=float, metavar='<beta>', default=3.0,
-                   help='concentration parameter for the Dirichlet prior')
-    p.add_argument('--num-itns', type=int, metavar='<num-itns>', default=50000,
+    p.add_argument('--num-itns', type=int, metavar='<num-itns>', default=10000,
                    help='number of iterations')
     p.add_argument('--seed', type=int, metavar='<seed>',
                    help='seed for the random number generator')
 
     args = p.parse_args()
 
-    getting_it_right(functions[args.algorithm],
+    getting_it_right(args.algorithm,
                      args.V,
                      args.D,
-                     args.l,
                      args.alpha,
-                     args.beta,
                      args.num_itns,
                      args.seed)
 

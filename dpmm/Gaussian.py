@@ -153,6 +153,6 @@ class Gaussian:
         result = math.pow(math.e, -0.5 * (x_mu * inv * x_mu.transpose()))
         return norm_const * result
     
-    def sample(self):
-        """ return a sample from this Gaussian """
-        
+    def sample(self,size):
+        """ return samples from this Gaussian, parameterized by size """
+        return np.random.multivariate_normal(np.asarray(self.mean).ravel(), self.covar, size)
